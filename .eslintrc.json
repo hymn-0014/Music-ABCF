@@ -1,0 +1,1 @@
+{\n  "env": {\n    "browser": true,\n    "es6": true\n  },\n  "extends": "eslint:recommended",\n  "parserOptions": {\n    "ecmaVersion": 2020\n  },\n  "rules": {\n    "semi": ["error", "always"],\n    "quotes": ["error", "single"]\n  }\n}
