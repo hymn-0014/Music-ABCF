@@ -14,7 +14,7 @@ interface LyricsViewerProps {
   onLinesChange?: (newLines: ChordLyricLine[]) => void;
 }
 
-const CHORD_COLOR = '#4FC3F7';
+const CHORD_COLOR = '#0F5E86';
 const SECTION_PATTERN = /^\[.*\]$/;
 const CHORD_PATTERN = /(?:[A-G][#b]?(?:maj|min|m|dim|aug|sus|add|M)?(?:\d+)?(?:(?:sus|add|aug|dim|maj|min|m|b|#)\d*)*(?:\([^)]*\))?(?:\/[A-G][#b]?)?|b?[1-7][#b]?(?:maj|min|m|dim|aug|sus|add|M)?(?:\d+)?(?:(?:sus|add|aug|dim|maj|min|m|b|#)\d*)*(?:\([^)]*\))?(?:\/b?[1-7][#b]?)?)/g;
 

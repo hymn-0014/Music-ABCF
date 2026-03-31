@@ -23,6 +23,7 @@ import {
 } from '../services/firebaseService';
 
 const THEME_PREF_KEY = 'musicabcf-theme-dark';
+const SONG_TRANSPOSE_PREF_KEY = 'musicabcf-song-transpose-by-id';
 
 const getInitialDarkMode = (): boolean => {
   if (typeof window === 'undefined') return true;
@@ -44,6 +45,35 @@ const persistDarkMode = (enabled: boolean): void => {
   }
 };
 
+const getInitialSongTransposeById = (): Record<string, number> => {
+  if (typeof window === 'undefined') return {};
+  try {
+    const raw = window.localStorage.getItem(SONG_TRANSPOSE_PREF_KEY);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return {};
+
+    const cleaned: Record<string, number> = {};
+    for (const [songId, value] of Object.entries(parsed)) {
+      const n = typeof value === 'number' ? Math.round(value) : Number(value);
+      if (!songId || !Number.isFinite(n) || n === 0) continue;
+      cleaned[songId] = n;
+    }
+    return cleaned;
+  } catch {
+    return {};
+  }
+};
+
+const persistSongTransposeById = (map: Record<string, number>): void => {
+  if (typeof window === 'undefined') return;
+  try {
+    window.localStorage.setItem(SONG_TRANSPOSE_PREF_KEY, JSON.stringify(map));
+  } catch {
+    // Ignore storage write failures and keep in-memory preference.
+  }
+};
+
 interface AppState {
   // auth
   uid: string | null;
@@ -55,6 +85,7 @@ interface AppState {
   // viewer state
   currentSongId: string | null;
   currentSetlistId: string | null;
+  songTransposeById: Record<string, number>;
   transpose: number;
   notation: NotationMode;
   accidental: AccidentalPreference;
@@ -127,6 +158,7 @@ const useAppStore = create<AppState>((set, get) => ({
   setlists: defaultSetlists,
   currentSongId: null,
   currentSetlistId: null,
+  songTransposeById: getInitialSongTransposeById(),
   transpose: 0,
   notation: 'standard',
   accidental: 'sharp',
@@ -136,10 +168,18 @@ const useAppStore = create<AppState>((set, get) => ({
   autoScrollSpeed: 30,
   darkMode: getInitialDarkMode(),
   setSongs: (songs) => {
-    set({ songs: songs.map(normalizeSong) });
+    const normalizedSongs = songs.map(normalizeSong);
+    const validSongIds = new Set(normalizedSongs.map((s) => s.id));
+    const prevTransposeById = get().songTransposeById;
+    const nextTransposeById = Object.fromEntries(
+      Object.entries(prevTransposeById).filter(([songId]) => validSongIds.has(songId)),
+    );
+
+    set({ songs: normalizedSongs, songTransposeById: nextTransposeById });
+    persistSongTransposeById(nextTransposeById);
     // Auto-sync to personal cloud
     const { uid } = get();
-    if (uid) savePersonalSongs(uid, songs.map(normalizeSong)).catch((e) => console.warn('Personal song sync failed:', e));
+    if (uid) savePersonalSongs(uid, normalizedSongs).catch((e) => console.warn('Personal song sync failed:', e));
   },
   setSetlists: (newSetlists) => {
     set({ setlists: newSetlists });
@@ -162,28 +202,54 @@ const useAppStore = create<AppState>((set, get) => ({
     if (uid && updatedSong) savePersonalSingleSong(uid, updatedSong).catch((e) => console.warn('Personal song sync failed:', e));
   },
   deleteSong: (id) => {
-    const { songs, currentSongId, uid } = get();
+    const { songs, currentSongId, songTransposeById, uid } = get();
+    const { [id]: _, ...nextSongTransposeById } = songTransposeById;
     set({
       songs: songs.filter((s) => s.id !== id),
       currentSongId: currentSongId === id ? null : currentSongId,
+      songTransposeById: nextSongTransposeById,
     });
+    persistSongTransposeById(nextSongTransposeById);
     // Auto-delete from personal cloud
     if (uid) deletePersonalSong(uid, id).catch((e) => console.warn('Personal song delete failed:', e));
     // In shared mode we do NOT auto-delete from shared cloud — the song may be used
     // by other users' setlists. Shared cloud cleanup is done explicitly via sync.
   },
   setCurrentSongId: (id) => {
-    const songTempo = get().songs.find((song) => song.id === id)?.tempo ?? 90;
+    const { songs, songTransposeById } = get();
+    const songTempo = songs.find((song) => song.id === id)?.tempo ?? 90;
+    const savedTranspose = id ? (songTransposeById[id] ?? 0) : 0;
     set({
       currentSongId: id,
-      transpose: 0,
+      transpose: savedTranspose,
       tempo: songTempo,
       metronomeEnabled: false,
       autoScrollEnabled: false,
     });
   },
   setCurrentSetlistId: (id) => set({ currentSetlistId: id }),
-  setTranspose: (n) => set({ transpose: n }),
+  setTranspose: (n) => {
+    const { currentSongId, songTransposeById } = get();
+    if (!currentSongId) {
+      set({ transpose: n });
+      return;
+    }
+
+    const normalized = Math.round(n);
+    const nextSongTransposeById = { ...songTransposeById };
+    if (normalized === 0) {
+      // 0 means original key, so we don't persist an offset entry.
+      delete nextSongTransposeById[currentSongId];
+    } else {
+      nextSongTransposeById[currentSongId] = normalized;
+    }
+
+    set({
+      transpose: normalized,
+      songTransposeById: nextSongTransposeById,
+    });
+    persistSongTransposeById(nextSongTransposeById);
+  },
   setNotation: (m) => set({ notation: m }),
   setAccidental: (p) => set({ accidental: p }),
   setTempo: (tempo) => {
