@@ -89,7 +89,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#121212',
-    ...(Platform.OS === 'web' ? { height: '100vh' as any, overflow: 'hidden' as any } : {}),
+    ...(Platform.OS === 'web' ? { height: '100vh' as any, display: 'flex' as any, flexDirection: 'column' as any, minHeight: 0 } : {}),
   },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#121212' },
   emptyIcon: { fontSize: 48, marginBottom: 12 },

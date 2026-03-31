@@ -159,15 +159,16 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
     backgroundColor: '#1A1A1A',
     minHeight: 0,
+    ...(Platform.OS === 'web' ? { overflow: 'auto' as any } : {}),
   },
   contentContainer: {
     paddingBottom: 60,
   },
   lineBlock: { marginBottom: 6 },
-  chordLineWrapper: { fontFamily: 'monospace', fontSize: 18, fontWeight: 'bold', color: '#4FC3F7' },
-  chordLine: { fontFamily: 'monospace', fontSize: 18, fontWeight: 'bold', color: '#4FC3F7' },
-  sectionLabel: { fontFamily: 'monospace', fontSize: 18, fontWeight: 'bold', color: '#66BB6A', marginTop: 10, marginBottom: 2 },
-  lyricLine: { fontFamily: 'monospace', fontSize: 18, color: '#E0E0E0', lineHeight: 26 },
+  chordLineWrapper: { fontFamily: "'Roboto Mono', monospace" as any, fontSize: 18, fontWeight: '700', color: '#4FC3F7', letterSpacing: 0.5 },
+  chordLine: { fontFamily: "'Roboto Mono', monospace" as any, fontSize: 18, fontWeight: '700', color: '#4FC3F7', letterSpacing: 0.5 },
+  sectionLabel: { fontFamily: "'Roboto Mono', monospace" as any, fontSize: 18, fontWeight: '700', color: '#66BB6A', marginTop: 10, marginBottom: 2 },
+  lyricLine: { fontFamily: "'Roboto Mono', monospace" as any, fontSize: 18, color: '#E0E0E0', lineHeight: 26 },
 });
 
 export default LyricsViewer;

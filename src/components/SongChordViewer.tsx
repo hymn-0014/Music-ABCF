@@ -131,7 +131,11 @@ const SongChordViewer: React.FC<SongChordViewerProps> = ({ song }) => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, minHeight: 0 },
+  container: {
+    flex: 1,
+    minHeight: 0,
+    ...(Platform.OS === 'web' ? { display: 'flex' as any, flexDirection: 'column' as any, overflow: 'hidden' as any } : {}),
+  },
   toolbar: {
     flexDirection: 'row' as const,
     alignItems: 'center' as const,

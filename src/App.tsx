@@ -37,25 +37,13 @@ const TabIcon = ({ label, focused }: { label: string; focused: boolean }) => (
 const MUSIC_LOGO_SVG = `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 40"><text x="4" y="28" font-family="sans-serif" font-size="18" font-weight="700" fill="%234FC3F7">♪</text><text x="24" y="28" font-family="sans-serif" font-size="16" font-weight="700" fill="%23FFFFFF">Music</text><text x="80" y="28" font-family="sans-serif" font-size="16" font-weight="700" fill="%234FC3F7">ABCF</text></svg>')}`;
 
 const LogoHeader = () => {
-  const [logoLoadFailed, setLogoLoadFailed] = useState(false);
-  const logoSource = { uri: './assets/logos/music-ministry-logo.png' };
-
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12 }}>
-      {!logoLoadFailed ? (
-        <Image
-          source={logoSource}
-          style={{ width: 80, height: 30, resizeMode: 'contain' }}
-          alt="Music Ministry Logo"
-          onError={() => setLogoLoadFailed(true)}
-        />
-      ) : (
-        <Image
-          source={{ uri: MUSIC_LOGO_SVG }}
-          style={{ width: 120, height: 30, resizeMode: 'contain' }}
-          alt="Music ABCF"
-        />
-      )}
+      <Image
+        source={{ uri: MUSIC_LOGO_SVG }}
+        style={{ width: 120, height: 30, resizeMode: 'contain' }}
+        alt="Music ABCF"
+      />
     </View>
   );
 };
@@ -146,7 +134,7 @@ export default function App() {
     <NavigationContainer theme={AppDarkTheme} linking={linking} documentTitle={{ formatter: () => 'Music-ABCF' }}>
       <Stack.Navigator screenOptions={{ headerStyle: { backgroundColor: '#1E1E1E' }, headerTintColor: '#FFFFFF', headerTitleStyle: { fontWeight: '700' } }}>
         <Stack.Screen name="Main" component={MainTabs} options={{ headerShown: false }} />
-        <Stack.Screen name="Viewer" component={ViewerScreen} options={{ title: 'Now Playing' }} />
+        <Stack.Screen name="Viewer" component={ViewerScreen} options={{ headerShown: false }} />
         <Stack.Screen name="AddSong" component={AddSongScreen} options={{ title: 'Add Song' }} />
         <Stack.Screen name="EditSong" component={EditSongScreen} options={{ title: 'Edit Song' }} />
       </Stack.Navigator>

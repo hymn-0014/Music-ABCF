@@ -13,8 +13,7 @@ const LoginScreen = () => {
   const [isSignUp, setIsSignUp] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [logoLoadFailed, setLogoLoadFailed] = useState(false);
-  const logoSource = { uri: '/assets/logos/music-ministry-logo.png' };
+  const LOGO_SVG = `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 50"><text x="10" y="35" font-family="sans-serif" font-size="24" font-weight="700" fill="%234FC3F7">♪</text><text x="36" y="35" font-family="sans-serif" font-size="20" font-weight="700" fill="%23FFFFFF">Music</text><text x="100" y="35" font-family="sans-serif" font-size="20" font-weight="700" fill="%234FC3F7">ABCF</text></svg>')}`;
 
   const handleSubmit = async () => {
     if (!email.trim() || !password.trim()) {
@@ -50,16 +49,11 @@ const LoginScreen = () => {
 
   return (
     <View style={styles.container}>
-      {!logoLoadFailed ? (
-        <Image
-          source={logoSource}
-          style={styles.logo}
-          alt="Music Ministry Logo"
-          onError={() => setLogoLoadFailed(true)}
-        />
-      ) : (
-        <Text style={styles.logoFallback}>Music ABCF</Text>
-      )}
+      <Image
+        source={{ uri: LOGO_SVG }}
+        style={styles.logo}
+        alt="Music ABCF"
+      />
       <Text style={styles.title}>Music ABCF</Text>
       <Text style={styles.subtitle}>{isSignUp ? 'Create Account' : 'Sign In'}</Text>
 
