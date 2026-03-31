@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator, Image } from 'react-native';
 import {
   signIn,
   signInWithGoogle,
@@ -13,6 +13,8 @@ const LoginScreen = () => {
   const [isSignUp, setIsSignUp] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [logoLoadFailed, setLogoLoadFailed] = useState(false);
+  const logoSource = { uri: '/assets/logos/music-ministry-logo.png' };
 
   const handleSubmit = async () => {
     if (!email.trim() || !password.trim()) {
@@ -48,6 +50,16 @@ const LoginScreen = () => {
 
   return (
     <View style={styles.container}>
+      {!logoLoadFailed ? (
+        <Image
+          source={logoSource}
+          style={styles.logo}
+          alt="Music Ministry Logo"
+          onError={() => setLogoLoadFailed(true)}
+        />
+      ) : (
+        <Text style={styles.logoFallback}>Music ABCF</Text>
+      )}
       <Text style={styles.title}>Music ABCF</Text>
       <Text style={styles.subtitle}>{isSignUp ? 'Create Account' : 'Sign In'}</Text>
 
@@ -108,6 +120,20 @@ const LoginScreen = () => {
 
 const styles = StyleSheet.create({
   container: { flex: 1, justifyContent: 'center', padding: 32, backgroundColor: '#121212' },
+  logo: {
+    width: 160,
+    height: 54,
+    resizeMode: 'contain',
+    alignSelf: 'center',
+    marginBottom: 12,
+  },
+  logoFallback: {
+    color: '#FFFFFF',
+    fontSize: 24,
+    fontWeight: '700',
+    textAlign: 'center',
+    marginBottom: 12,
+  },
   title: { fontSize: 32, fontWeight: 'bold', textAlign: 'center', marginBottom: 4, color: '#FFFFFF' },
   subtitle: { fontSize: 18, textAlign: 'center', marginBottom: 24, color: '#999' },
   error: { color: '#FF6B6B', textAlign: 'center', marginBottom: 12 },

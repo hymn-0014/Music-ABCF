@@ -35,17 +35,21 @@ const TabIcon = ({ label, focused }: { label: string; focused: boolean }) => (
 );
 
 const LogoHeader = () => {
-  const logoSource = Platform.OS === 'web'
-    ? { uri: '/assets/logos/music-ministry-logo.png' }
-    : require('../public/assets/logos/music-ministry-logo.png');
+  const [logoLoadFailed, setLogoLoadFailed] = useState(false);
+  const logoSource = { uri: '/assets/logos/music-ministry-logo.png' };
 
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12 }}>
-      <Image
-        source={logoSource}
-        style={{ width: 80, height: 30, resizeMode: 'contain' }}
-        alt="Music Ministry Logo"
-      />
+      {!logoLoadFailed ? (
+        <Image
+          source={logoSource}
+          style={{ width: 80, height: 30, resizeMode: 'contain' }}
+          alt="Music Ministry Logo"
+          onError={() => setLogoLoadFailed(true)}
+        />
+      ) : (
+        <Text style={{ color: '#FFFFFF', fontSize: 16, fontWeight: '700' }}>Music ABCF</Text>
+      )}
     </View>
   );
 };

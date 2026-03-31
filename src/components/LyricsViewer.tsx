@@ -17,11 +17,11 @@ const LyricsViewer: React.FC<LyricsViewerProps> = ({
   lines, transpose, songKey, notation, accidental, autoScrollEnabled, autoScrollSpeed,
 }) => {
   const CHORD_COLOR = '#4FC3F7';
+  const CHORD_PATTERN = /(?:[A-G][#b]?(?:maj|min|m|dim|aug|sus|add)?\d*(?:\([^)]*\))?(?:\/[A-G][#b]?)?|[1-7][#b]?(?:maj|min|m|dim|aug|sus|add)?\d*(?:\([^)]*\))?(?:\/[1-7][#b]?)?)/g;
 
   // Parse and render colored chords preserving original spacing
   const renderColoredChormLine = (chordLine: string): React.ReactNode[] => {
     const elements: React.ReactNode[] = [];
-    const CHORD_PATTERN = /[A-G][#b]?[a-z0-9]*/g;
     let lastIndex = 0;
     let match;
     
@@ -155,8 +155,8 @@ const styles = StyleSheet.create({
     paddingBottom: 60,
   },
   lineBlock: { marginBottom: 6 },
-  chordLineWrapper: { fontFamily: 'monospace', fontSize: 18, fontWeight: 'bold' },
-  chordLine: { fontFamily: 'monospace', fontSize: 18, fontWeight: 'bold' },
+  chordLineWrapper: { fontFamily: 'monospace', fontSize: 18, fontWeight: 'bold', color: '#4FC3F7' },
+  chordLine: { fontFamily: 'monospace', fontSize: 18, fontWeight: 'bold', color: '#4FC3F7' },
   lyricLine: { fontFamily: 'monospace', fontSize: 18, color: '#E0E0E0', lineHeight: 26 },
 });
 

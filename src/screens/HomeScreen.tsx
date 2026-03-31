@@ -1,29 +1,38 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Image, Platform } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
 
 const HomeScreen = ({ navigation }: any) => {
-  const bibleLogoSource = Platform.OS === 'web'
-    ? { uri: '/assets/logos/bible-logo.png' }
-    : require('../../public/assets/logos/bible-logo.png');
-
-  const musicLogoSource = Platform.OS === 'web'
-    ? { uri: '/assets/logos/music-ministry-logo.png' }
-    : require('../../public/assets/logos/music-ministry-logo.png');
+  const [bibleLogoFailed, setBibleLogoFailed] = useState(false);
+  const [musicLogoFailed, setMusicLogoFailed] = useState(false);
+  const bibleLogoSource = { uri: '/assets/logos/bible-logo.png' };
+  const musicLogoSource = { uri: '/assets/logos/music-ministry-logo.png' };
 
   return (
     <View style={styles.container}>
       <View style={styles.logoContainer}>
         <View style={styles.logoRow}>
-          <Image
-            source={bibleLogoSource}
-            style={styles.bibleLogo}
-            alt="Bible Logo"
-          />
-          <Image
-            source={musicLogoSource}
-            style={styles.musicLogo}
-            alt="Music Ministry Logo"
-          />
+          {!bibleLogoFailed ? (
+            <Image
+              source={bibleLogoSource}
+              style={styles.bibleLogo}
+              alt="Bible Logo"
+              onError={() => setBibleLogoFailed(true)}
+            />
+          ) : (
+            <View style={styles.bibleFallback}>
+              <Text style={styles.bibleFallbackText}>ABCF</Text>
+            </View>
+          )}
+          {!musicLogoFailed ? (
+            <Image
+              source={musicLogoSource}
+              style={styles.musicLogo}
+              alt="Music Ministry Logo"
+              onError={() => setMusicLogoFailed(true)}
+            />
+          ) : (
+            <Text style={styles.musicFallbackText}>Music Ministry</Text>
+          )}
         </View>
       </View>
 
@@ -54,7 +63,19 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
   },
   bibleLogo: { width: 60, height: 60, resizeMode: 'contain' },
+  bibleFallback: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: '#1E1E1E',
+    borderWidth: 1,
+    borderColor: '#333',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  bibleFallbackText: { color: '#4FC3F7', fontSize: 14, fontWeight: '700' },
   musicLogo: { width: 120, height: 45, resizeMode: 'contain' },
+  musicFallbackText: { color: '#FFFFFF', fontSize: 20, fontWeight: '700' },
   title: { fontSize: 32, fontWeight: 'bold', marginBottom: 4, color: '#FFFFFF' },
   subtitle: { fontSize: 16, marginBottom: 32, opacity: 0.7, color: '#FFFFFF' },
   btn: {
