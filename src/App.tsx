@@ -48,13 +48,14 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const uid = useAppStore((s) => s.uid);
   const setUid = useAppStore((s) => s.setUid);
-  const pullFromCloud = useAppStore((s) => s.pullFromCloud);
+  const restorePersonalData = useAppStore((s) => s.restorePersonalData);
 
   useEffect(() => {
     const unsubscribe = onAuthChange(async (user) => {
       setUid(user?.uid ?? null, user?.email ?? null);
       if (user) {
-        await pullFromCloud();
+        // Tier 1: restore the user's own backup silently on login
+        await restorePersonalData();
       }
       setLoading(false);
     });

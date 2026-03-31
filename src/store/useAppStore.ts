@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { Song, Setlist, ModificationEntry, NotationMode, AccidentalPreference, SyncResult, SyncConfirmFn } from '../types';
 import { songs as defaultSongs, setlists as defaultSetlists } from '../data/mockData';
 import {
+  // Tier 2 — shared cloud (explicit upload/download)
   syncSongsToFirestore,
   fetchSongsFromFirestore,
   syncSetlistsToFirestore,
@@ -11,6 +12,14 @@ import {
   uploadSingleSetlist,
   deleteSetlistFromFirestore,
   fetchSongsByIds,
+  // Tier 1 — personal auto-sync
+  savePersonalSongs,
+  loadPersonalSongs,
+  savePersonalSetlists,
+  loadPersonalSetlists,
+  savePersonalSingleSong,
+  deletePersonalSong,
+  savePersonalSingleSetlist,
 } from '../services/firebaseService';
 
 interface AppState {
@@ -48,6 +57,7 @@ interface AppState {
   setAutoScrollSpeed: (speed: number) => void;
   toggleDarkMode: () => void;
   // cloud sync
+  restorePersonalData: () => Promise<void>;
   pullFromCloud: () => Promise<void>;
   pushToCloud: () => Promise<void>;
   smartPushToCloud: (confirm: SyncConfirmFn) => Promise<SyncResult>;
@@ -103,28 +113,42 @@ const useAppStore = create<AppState>((set, get) => ({
   autoScrollEnabled: false,
   autoScrollSpeed: 30,
   darkMode: true,
-  setSongs: (songs) => set({ songs: songs.map(normalizeSong) }),
+  setSongs: (songs) => {
+    set({ songs: songs.map(normalizeSong) });
+    // Auto-sync to personal cloud
+    const { uid } = get();
+    if (uid) savePersonalSongs(uid, songs.map(normalizeSong)).catch((e) => console.warn('Personal song sync failed:', e));
+  },
   setSetlists: (newSetlists) => {
     set({ setlists: newSetlists });
+    // Auto-sync to personal cloud
+    const { uid } = get();
+    if (uid) savePersonalSetlists(uid, newSetlists).catch((e) => console.warn('Personal setlist sync failed:', e));
   },
   updateSong: (id, updates) => {
-    const { songs, userEmail } = get();
+    const { songs, userEmail, uid } = get();
     const now = new Date().toISOString();
     const email = userEmail || 'unknown';
-    set({ songs: songs.map((s) => {
+    const updatedSongs = songs.map((s) => {
       if (s.id !== id) return s;
       const entry: ModificationEntry = { userEmail: email, action: 'edited', timestamp: now };
       return { ...s, ...updates, lastModifiedBy: email, lastModifiedAt: now, modificationHistory: [...(s.modificationHistory || []), entry] };
-    }) });
+    });
+    set({ songs: updatedSongs });
+    // Auto-sync updated song to personal cloud
+    const updatedSong = updatedSongs.find((s) => s.id === id);
+    if (uid && updatedSong) savePersonalSingleSong(uid, updatedSong).catch((e) => console.warn('Personal song sync failed:', e));
   },
   deleteSong: (id) => {
-    const { songs, currentSongId } = get();
+    const { songs, currentSongId, uid } = get();
     set({
       songs: songs.filter((s) => s.id !== id),
       currentSongId: currentSongId === id ? null : currentSongId,
     });
-    // In shared mode we do NOT auto-delete from cloud — the song may be used
-    // by other users' setlists. Cloud cleanup is done explicitly via sync.
+    // Auto-delete from personal cloud
+    if (uid) deletePersonalSong(uid, id).catch((e) => console.warn('Personal song delete failed:', e));
+    // In shared mode we do NOT auto-delete from shared cloud — the song may be used
+    // by other users' setlists. Shared cloud cleanup is done explicitly via sync.
   },
   setCurrentSongId: (id) => {
     const songTempo = get().songs.find((song) => song.id === id)?.tempo ?? 90;
@@ -160,16 +184,67 @@ const useAppStore = create<AppState>((set, get) => ({
   setAutoScrollSpeed: (speed) => set({ autoScrollSpeed: Math.min(120, Math.max(10, Math.round(speed))) }),
   toggleDarkMode: () => set((s) => ({ darkMode: !s.darkMode })),
 
+  /**
+   * Tier 1: Restore personal data from users/{uid}/… on login.
+   * This is the user's own backup — always auto-restored silently.
+   */
+  restorePersonalData: async () => {
+    const { uid } = get();
+    if (!uid) return;
+    try {
+      const [personalSongs, personalSetlists] = await Promise.all([
+        loadPersonalSongs(uid),
+        loadPersonalSetlists(uid),
+      ]);
+      if (personalSongs.length > 0) {
+        set({ songs: personalSongs.map(normalizeSong) });
+      }
+      if (personalSetlists.length > 0) {
+        set({ setlists: personalSetlists });
+      }
+    } catch (e) {
+      console.error('Personal data restore failed:', e);
+    }
+  },
+
+  /**
+   * Tier 2 pull: Download from shared cloud (songs/, setlists/).
+   * Only called explicitly via Settings → Download from Cloud.
+   * Merges: adds missing songs/setlists; does NOT delete local-only items.
+   */
   pullFromCloud: async () => {
     const { uid } = get();
     if (!uid) return;
     try {
-      const [songs, setlists] = await Promise.all([
+      const [cloudSongs, cloudSetlists] = await Promise.all([
         fetchSongsFromFirestore(uid),
         fetchSetlistsFromFirestore(uid),
       ]);
-      if (songs.length > 0) set({ songs: songs.map(normalizeSong) });
-      if (setlists.length > 0) set({ setlists });
+      const { songs, setlists } = get();
+
+      // Merge cloud songs with local — add new, don't remove existing
+      if (cloudSongs.length > 0) {
+        const localById = new Map(songs.map((s) => [s.id, s]));
+        const merged = [...songs];
+        for (const cs of cloudSongs) {
+          if (!localById.has(cs.id)) {
+            merged.push(normalizeSong(cs));
+          }
+        }
+        set({ songs: merged });
+      }
+
+      // Merge cloud setlists with local
+      if (cloudSetlists.length > 0) {
+        const localById = new Map(setlists.map((sl) => [sl.id, sl]));
+        const merged = [...setlists];
+        for (const csl of cloudSetlists) {
+          if (!localById.has(csl.id)) {
+            merged.push(csl);
+          }
+        }
+        set({ setlists: merged });
+      }
     } catch (e) {
       console.error('Cloud pull failed:', e);
     }
@@ -386,6 +461,11 @@ const useAppStore = create<AppState>((set, get) => ({
     }
 
     set({ songs: newSongs, setlists: newSetlists });
+    // Persist merged data to personal cloud
+    if (uid) {
+      savePersonalSongs(uid, newSongs).catch((e) => console.warn('Personal song sync failed:', e));
+      savePersonalSetlists(uid, newSetlists).catch((e) => console.warn('Personal setlist sync failed:', e));
+    }
     return result;
   },
 
@@ -502,6 +582,11 @@ const useAppStore = create<AppState>((set, get) => ({
     }
 
     set({ songs: newSongs, setlists: newSetlists });
+    // Persist downloaded data to personal cloud
+    if (uid) {
+      savePersonalSongs(uid, newSongs).catch((e) => console.warn('Personal song sync failed:', e));
+      savePersonalSetlists(uid, newSetlists).catch((e) => console.warn('Personal setlist sync failed:', e));
+    }
     return { songsDownloaded, warnings };
   },
 }));
