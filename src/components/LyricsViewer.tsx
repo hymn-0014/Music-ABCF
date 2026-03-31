@@ -86,7 +86,7 @@ const LyricsViewer: React.FC<LyricsViewerProps> = ({
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16, backgroundColor: '#121212' },
+  container: { flex: 1, padding: 16, backgroundColor: '#121212', minHeight: 0 },
   lineBlock: { marginBottom: 4 },
   chordLine: { fontFamily: 'monospace', fontSize: 18, fontWeight: 'bold', color: '#4FC3F7' },
   lyricLine: { fontFamily: 'monospace', fontSize: 18, color: '#FFFFFF' },

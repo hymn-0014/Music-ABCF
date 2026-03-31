@@ -9,6 +9,7 @@ import ViewerScreen from './screens/ViewerScreen';
 import SettingsScreen from './screens/SettingsScreen';
 import LoginScreen from './screens/LoginScreen';
 import AddSongScreen from './screens/AddSongScreen';
+import EditSongScreen from './screens/EditSongScreen';
 import { onAuthChange } from './services/authService';
 import useAppStore from './store/useAppStore';
 
@@ -82,7 +83,7 @@ function MainTabs() {
 
 const linking = Platform.OS === 'web' ? { 
   prefixes: ['https://hymn-0014.github.io/Music-ABCF', 'music-abcf://'],
-  config: { screens: { Main: '', Viewer: 'viewer', AddSong: 'add-song' } } 
+  config: { screens: { Main: '', Viewer: 'viewer', AddSong: 'add-song', EditSong: 'edit-song' } } 
 } : undefined;
 
 export default function App() {
@@ -120,6 +121,7 @@ export default function App() {
         <Stack.Screen name="Main" component={MainTabs} options={{ headerShown: false }} />
         <Stack.Screen name="Viewer" component={ViewerScreen} options={{ title: 'Now Playing' }} />
         <Stack.Screen name="AddSong" component={AddSongScreen} options={{ title: 'Add Song' }} />
+        <Stack.Screen name="EditSong" component={EditSongScreen} options={{ title: 'Edit Song' }} />
       </Stack.Navigator>
     </NavigationContainer>
   );

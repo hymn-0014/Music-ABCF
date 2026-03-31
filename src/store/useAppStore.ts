@@ -29,6 +29,8 @@ interface AppState {
   // actions
   setSongs: (songs: Song[]) => void;
   setSetlists: (setlists: Setlist[]) => void;
+  updateSong: (id: string, updates: Partial<Omit<Song, 'id'>>) => void;
+  deleteSong: (id: string) => void;
   setCurrentSongId: (id: string | null) => void;
   setCurrentSetlistId: (id: string | null) => void;
   setTranspose: (n: number) => void;
@@ -83,6 +85,19 @@ const useAppStore = create<AppState>((set, get) => ({
   darkMode: true,
   setSongs: (songs) => set({ songs: mergeSongs(defaultSongs, songs) }),
   setSetlists: (setlists) => set({ setlists }),
+  updateSong: (id, updates) => {
+    const { songs } = get();
+    set({ songs: songs.map((s) => (s.id === id ? { ...s, ...updates } : s)) });
+    void get().pushToCloud();
+  },
+  deleteSong: (id) => {
+    const { songs, currentSongId } = get();
+    set({
+      songs: songs.filter((s) => s.id !== id),
+      currentSongId: currentSongId === id ? null : currentSongId,
+    });
+    void get().pushToCloud();
+  },
   setCurrentSongId: (id) => {
     const songTempo = get().songs.find((song) => song.id === id)?.tempo ?? 90;
     set({

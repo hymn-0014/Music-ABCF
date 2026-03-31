@@ -39,8 +39,18 @@ const ViewerScreen = ({ navigation }: any) => {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title} numberOfLines={1}>{song.title}</Text>
-        <Text style={styles.artist}>{song.artist} · Key of {song.key}</Text>
+        <View style={styles.headerTop}>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.title} numberOfLines={1}>{song.title}</Text>
+            <Text style={styles.artist}>{song.artist} · Key of {song.key}</Text>
+          </View>
+          <TouchableOpacity
+            style={styles.editBtn}
+            onPress={() => navigation.navigate('EditSong', { songId: song.id })}
+          >
+            <Text style={styles.editBtnText}>✏️</Text>
+          </TouchableOpacity>
+        </View>
         {setlist && (
           <Text style={styles.setlistInfo}>{setlist.name} ({currentIndex + 1}/{totalInSetlist})</Text>
         )}
@@ -77,6 +87,9 @@ const styles = StyleSheet.create({
   goBackBtn: { backgroundColor: '#4FC3F7', borderRadius: 10, paddingHorizontal: 24, paddingVertical: 12 },
   goBackText: { color: '#121212', fontSize: 16, fontWeight: '600' },
   header: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 8, borderBottomWidth: 1, borderBottomColor: '#2A2A2A' },
+  headerTop: { flexDirection: 'row', alignItems: 'center' },
+  editBtn: { padding: 8, marginLeft: 8 },
+  editBtnText: { fontSize: 20 },
   title: { fontSize: 22, fontWeight: 'bold', color: '#FFFFFF' },
   artist: { fontSize: 14, color: '#AAA', marginTop: 2 },
   setlistInfo: { fontSize: 12, color: '#4FC3F7', marginTop: 4 },

@@ -49,6 +49,12 @@ const SongLibraryScreen = ({ navigation }: any) => {
               <Text style={styles.songTitle}>{item.title}</Text>
               <Text style={styles.songArtist}>{item.artist}</Text>
             </View>
+            <TouchableOpacity
+              style={styles.editBtn}
+              onPress={() => navigation.navigate('EditSong', { songId: item.id })}
+            >
+              <Text style={styles.editBtnText}>✏️</Text>
+            </TouchableOpacity>
             <View style={styles.keyBadge}>
               <Text style={styles.keyText}>{item.key}</Text>
             </View>
@@ -86,6 +92,10 @@ const styles = StyleSheet.create({
     marginLeft: 12,
   },
   keyText: { color: '#121212', fontSize: 14, fontWeight: '700' },
+  editBtn: {
+    padding: 8, marginRight: 4,
+  },
+  editBtnText: { fontSize: 18 },
   emptyContainer: { alignItems: 'center', marginTop: 60 },
   emptyIcon: { fontSize: 48, marginBottom: 12 },
   emptyText: { fontSize: 18, color: '#FFFFFF', fontWeight: '600', marginBottom: 4 },

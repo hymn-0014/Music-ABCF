@@ -1,5 +1,5 @@
-import React, { useEffect, useRef } from 'react';
-import { View, StyleSheet, Platform, Vibration } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, Platform, Vibration } from 'react-native';
 import { Song } from '../types';
 import LyricsViewer from './LyricsViewer';
 import TransposeControl from './TransposeControl';
@@ -26,6 +26,7 @@ const SongChordViewer: React.FC<SongChordViewerProps> = ({ song }) => {
   const setMetronomeEnabled = useAppStore((state) => state.setMetronomeEnabled);
   const setAutoScrollEnabled = useAppStore((state) => state.setAutoScrollEnabled);
   const setAutoScrollSpeed = useAppStore((state) => state.setAutoScrollSpeed);
+  const [showPlayback, setShowPlayback] = useState(false);
   const audioContextRef = useRef<AudioContext | null>(null);
 
   useEffect(() => {
@@ -84,26 +85,38 @@ const SongChordViewer: React.FC<SongChordViewerProps> = ({ song }) => {
 
   return (
     <View style={styles.container}>
-      <TransposeControl
-        transpose={transpose}
-        accidental={accidental}
-        onTransposeChange={setTranspose}
-        onAccidentalChange={setAccidental}
-      />
+      <View style={styles.toolbar}>
+        <View style={styles.toolbarLeft}>
+          <TransposeControl
+            transpose={transpose}
+            accidental={accidental}
+            onTransposeChange={setTranspose}
+            onAccidentalChange={setAccidental}
+          />
+        </View>
+        <TouchableOpacity
+          style={[styles.toolbarBtn, showPlayback && styles.toolbarBtnActive]}
+          onPress={() => setShowPlayback(!showPlayback)}
+        >
+          <Text style={[styles.toolbarBtnText, showPlayback && styles.toolbarBtnTextActive]}>▶</Text>
+        </TouchableOpacity>
+      </View>
       <ChordDisplay
         notation={notation}
         onToggle={() => setNotation(notation === 'standard' ? 'nashville' : 'standard')}
       />
-      <PlaybackControls
-        tempo={tempo}
-        metronomeEnabled={metronomeEnabled}
-        autoScrollEnabled={autoScrollEnabled}
-        autoScrollSpeed={autoScrollSpeed}
-        onTempoChange={setTempo}
-        onMetronomeToggle={() => setMetronomeEnabled(!metronomeEnabled)}
-        onAutoScrollToggle={() => setAutoScrollEnabled(!autoScrollEnabled)}
-        onAutoScrollSpeedChange={setAutoScrollSpeed}
-      />
+      {showPlayback && (
+        <PlaybackControls
+          tempo={tempo}
+          metronomeEnabled={metronomeEnabled}
+          autoScrollEnabled={autoScrollEnabled}
+          autoScrollSpeed={autoScrollSpeed}
+          onTempoChange={setTempo}
+          onMetronomeToggle={() => setMetronomeEnabled(!metronomeEnabled)}
+          onAutoScrollToggle={() => setAutoScrollEnabled(!autoScrollEnabled)}
+          onAutoScrollSpeedChange={setAutoScrollSpeed}
+        />
+      )}
       <LyricsViewer
         lines={song.lines}
         transpose={transpose}
@@ -118,7 +131,21 @@ const SongChordViewer: React.FC<SongChordViewerProps> = ({ song }) => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
+  container: { flex: 1, overflow: 'hidden' as const },
+  toolbar: { flexDirection: 'row' as const, alignItems: 'center' as const, paddingRight: 8 },
+  toolbarLeft: { flex: 1 },
+  toolbarBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#2A2A2A',
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+    marginRight: 4,
+  },
+  toolbarBtnActive: { backgroundColor: '#4FC3F7' },
+  toolbarBtnText: { color: '#FFFFFF', fontSize: 18, fontWeight: '700' as const },
+  toolbarBtnTextActive: { color: '#121212' },
 });
 
 export default SongChordViewer;
