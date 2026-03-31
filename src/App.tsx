@@ -2,8 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { NavigationContainer, DefaultTheme } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { ActivityIndicator, View, Platform } from 'react-native';
-import HomeScreen from './screens/HomeScreen';
+import { ActivityIndicator, View, Text, Platform } from 'react-native';
 import SongLibraryScreen from './screens/SongLibraryScreen';
 import SetlistScreen from './screens/SetlistScreen';
 import ViewerScreen from './screens/ViewerScreen';
@@ -30,20 +29,53 @@ const AppDarkTheme = {
   },
 };
 
+const TabIcon = ({ label, focused }: { label: string; focused: boolean }) => (
+  <Text style={{ fontSize: 11, color: focused ? '#4FC3F7' : '#888', marginTop: 2 }}>{label}</Text>
+);
+
 function MainTabs() {
   return (
     <Tab.Navigator
       screenOptions={{
-        headerShown: false,
-        tabBarStyle: { backgroundColor: '#1E1E1E', borderTopColor: '#333' },
+        headerStyle: { backgroundColor: '#1E1E1E', shadowColor: '#000' },
+        headerTintColor: '#FFFFFF',
+        headerTitleStyle: { fontWeight: '700', fontSize: 18 },
+        tabBarStyle: {
+          backgroundColor: '#1E1E1E',
+          borderTopColor: '#333',
+          height: 60,
+          paddingBottom: 8,
+          paddingTop: 4,
+        },
         tabBarActiveTintColor: '#4FC3F7',
         tabBarInactiveTintColor: '#888',
+        tabBarLabelStyle: { fontSize: 12, fontWeight: '600' },
       }}
     >
-      <Tab.Screen name="Home" component={HomeScreen} />
-      <Tab.Screen name="SongLibrary" component={SongLibraryScreen} options={{ title: 'Songs' }} />
-      <Tab.Screen name="Setlists" component={SetlistScreen} />
-      <Tab.Screen name="Settings" component={SettingsScreen} />
+      <Tab.Screen
+        name="Songs"
+        component={SongLibraryScreen}
+        options={{
+          title: 'Songs',
+          tabBarIcon: ({ focused }) => <Text style={{ fontSize: 22 }}>{focused ? '🎵' : '🎵'}</Text>,
+        }}
+      />
+      <Tab.Screen
+        name="Setlists"
+        component={SetlistScreen}
+        options={{
+          title: 'Setlists',
+          tabBarIcon: ({ focused }) => <Text style={{ fontSize: 22 }}>{focused ? '📋' : '📋'}</Text>,
+        }}
+      />
+      <Tab.Screen
+        name="Settings"
+        component={SettingsScreen}
+        options={{
+          title: 'Settings',
+          tabBarIcon: ({ focused }) => <Text style={{ fontSize: 22 }}>{focused ? '⚙️' : '⚙️'}</Text>,
+        }}
+      />
     </Tab.Navigator>
   );
 }
@@ -81,7 +113,7 @@ export default function App() {
 
   return (
     <NavigationContainer theme={AppDarkTheme} linking={linking} documentTitle={{ formatter: () => 'Music-ABCF' }}>
-      <Stack.Navigator screenOptions={{ headerStyle: { backgroundColor: '#1E1E1E' }, headerTintColor: '#FFFFFF' }}>
+      <Stack.Navigator screenOptions={{ headerStyle: { backgroundColor: '#1E1E1E' }, headerTintColor: '#FFFFFF', headerTitleStyle: { fontWeight: '700' } }}>
         <Stack.Screen name="Main" component={MainTabs} options={{ headerShown: false }} />
         <Stack.Screen name="Viewer" component={ViewerScreen} options={{ title: 'Now Playing' }} />
         <Stack.Screen name="AddSong" component={AddSongScreen} options={{ title: 'Add Song' }} />
