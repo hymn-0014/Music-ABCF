@@ -102,8 +102,19 @@ a { color: #4FC3F7; text-decoration: none; }
   border-bottom: 1px solid #2A2A2A;
   flex-shrink: 0;
 }
-.header-logo {
-  height: 32px;
+.header-logo-img {
+  height: 36px;
+  object-fit: contain;
+}
+.header-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #fff;
+  margin-left: 10px;
+}
+.app-header {
+  display: flex;
+  align-items: center;
 }
 .app-main {
   flex: 1;
@@ -150,10 +161,20 @@ a { color: #4FC3F7; text-decoration: none; }
   text-align: center;
   box-shadow: 0 8px 32px rgba(0,0,0,0.4);
 }
-.login-logo {
-  width: 120px;
-  height: auto;
-  margin-bottom: 8px;
+.login-logos {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.login-logo-mt {
+  height: 60px;
+  object-fit: contain;
+}
+.login-logo-abcf {
+  height: 80px;
+  object-fit: contain;
 }
 .login-title {
   font-size: 28px;
@@ -182,13 +203,14 @@ a { color: #4FC3F7; text-decoration: none; }
   width: 100%;
   padding: 14px 16px;
   border-radius: 12px;
-  border: 1px solid #333;
-  background: #2A2A2A;
-  color: #fff;
+  border: 1px solid #ddd;
+  background: #FFFFFF;
+  color: #222;
   font-size: 16px;
   transition: border-color 0.2s;
 }
-.login-input:focus { border-color: #4FC3F7; }
+.login-input::placeholder { color: #999; }
+.login-input:focus { border-color: #4FC3F7; outline: none; }
 .login-btn {
   width: 100%;
   padding: 14px;

@@ -10,7 +10,7 @@ import EditSongScreen from './screens/EditSongScreen';
 import { onAuthChange } from './services/authService';
 import useAppStore from './store/useAppStore';
 
-const LOGO_SVG = `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 40"><text x="4" y="28" font-family="sans-serif" font-size="18" font-weight="700" fill="%234FC3F7">♪</text><text x="24" y="28" font-family="sans-serif" font-size="16" font-weight="700" fill="%23FFFFFF">Music</text><text x="80" y="28" font-family="sans-serif" font-size="16" font-weight="700" fill="%234FC3F7">ABCF</text></svg>')}`;
+const BASE = import.meta.env.BASE_URL;
 
 function TabLayout() {
   const [activeTab, setActiveTab] = useState<'songs' | 'setlists' | 'settings'>('songs');
@@ -18,7 +18,8 @@ function TabLayout() {
   return (
     <div className="app-layout">
       <header className="app-header">
-        <img src={LOGO_SVG} alt="Music ABCF" className="header-logo" />
+        <img src={`${BASE}assets/logos/mt-logo.png`} alt="Music Ministry" className="header-logo-img" />
+        <span className="header-title">Music ABCF</span>
       </header>
       <main className="app-main">
         {activeTab === 'songs' && <SongLibraryScreen />}

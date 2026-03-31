@@ -6,7 +6,7 @@ import {
   getAuthErrorMessage,
 } from '../services/authService';
 
-const LOGO_SVG = `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 50"><text x="10" y="35" font-family="sans-serif" font-size="24" font-weight="700" fill="%234FC3F7">♪</text><text x="36" y="35" font-family="sans-serif" font-size="20" font-weight="700" fill="%23FFFFFF">Music</text><text x="100" y="35" font-family="sans-serif" font-size="20" font-weight="700" fill="%234FC3F7">ABCF</text></svg>')}`;
+const BASE = import.meta.env.BASE_URL;
 
 const LoginScreen = () => {
   const [email, setEmail] = useState('');
@@ -51,7 +51,10 @@ const LoginScreen = () => {
   return (
     <div className="login-page">
       <div className="login-card">
-        <img src={LOGO_SVG} alt="Music ABCF" className="login-logo" />
+        <div className="login-logos">
+          <img src={`${BASE}assets/logos/mt-logo.png`} alt="Music Ministry" className="login-logo-mt" />
+          <img src={`${BASE}assets/logos/ABCF.png`} alt="ABCF" className="login-logo-abcf" />
+        </div>
         <h1 className="login-title">Music ABCF</h1>
         <p className="login-subtitle">{isSignUp ? 'Create Account' : 'Sign In'}</p>
 
