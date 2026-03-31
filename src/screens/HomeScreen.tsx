@@ -2,24 +2,25 @@ import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Image, Platform } from 'react-native';
 
 const HomeScreen = ({ navigation }: any) => {
-  const getImageSource = (filename: string) => {
-    if (Platform.OS === 'web') {
-      return { uri: `/assets/logos/${filename}` };
-    }
-    return require(`../../public/assets/logos/${filename}`);
-  };
+  const bibleLogoSource = Platform.OS === 'web'
+    ? { uri: '/assets/logos/bible-logo.png' }
+    : require('../../public/assets/logos/bible-logo.png');
+
+  const musicLogoSource = Platform.OS === 'web'
+    ? { uri: '/assets/logos/music-ministry-logo.png' }
+    : require('../../public/assets/logos/music-ministry-logo.png');
 
   return (
     <View style={styles.container}>
       <View style={styles.logoContainer}>
         <View style={styles.logoRow}>
           <Image
-            source={getImageSource('bible-logo.png')}
+            source={bibleLogoSource}
             style={styles.bibleLogo}
             alt="Bible Logo"
           />
           <Image
-            source={getImageSource('music-ministry-logo.png')}
+            source={musicLogoSource}
             style={styles.musicLogo}
             alt="Music Ministry Logo"
           />
