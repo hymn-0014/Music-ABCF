@@ -1,43 +1,565 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Music-ABCF Features</title>
-    <link rel="stylesheet" href="styles.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Music ABCF — Lyrics &amp; Chords Viewer</title>
+  <style>
+    :root {
+      --bg: #ffffff;
+      --surface: #f5f5f5;
+      --text: #1a1a1a;
+      --muted: #666666;
+      --accent: #4a90d9;
+      --accent-hover: #357abd;
+      --border: #e0e0e0;
+      --chord: #c0392b;
+      --nav-bg: #4a90d9;
+      --nav-text: #ffffff;
+      --card-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+    .dark {
+      --bg: #121212;
+      --surface: #1e1e1e;
+      --text: #e0e0e0;
+      --muted: #999999;
+      --accent: #6db3f2;
+      --accent-hover: #5a9de0;
+      --border: #333333;
+      --chord: #ff6b6b;
+      --nav-bg: #1e1e1e;
+      --nav-text: #e0e0e0;
+      --card-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      transition: background 0.3s, color 0.3s;
+      min-height: 100vh;
+    }
+    header {
+      background: var(--nav-bg);
+      color: var(--nav-text);
+      padding: 16px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    header h1 { font-size: 1.4rem; font-weight: 700; }
+    .header-controls { display: flex; gap: 12px; align-items: center; }
+    nav {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: center;
+      gap: 0;
+    }
+    nav button {
+      background: none;
+      border: none;
+      padding: 12px 24px;
+      color: var(--muted);
+      font-size: 0.95rem;
+      cursor: pointer;
+      border-bottom: 3px solid transparent;
+      transition: all 0.2s;
+    }
+    nav button:hover { color: var(--text); }
+    nav button.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+      font-weight: 600;
+    }
+    main { max-width: 800px; margin: 0 auto; padding: 24px 16px; }
+    .btn {
+      padding: 8px 16px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      font-weight: 500;
+      transition: all 0.2s;
+    }
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-primary:hover { background: var(--accent-hover); }
+    .btn-sm { padding: 4px 10px; font-size: 0.8rem; }
+    .btn-outline {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text);
+    }
+    .btn-outline:hover { background: var(--surface); }
+    .toggle-btn {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 6px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.85rem;
+    }
+    .toggle-btn:hover { background: var(--border); }
+    /* Song Library */
+    .search-bar {
+      width: 100%;
+      padding: 10px 16px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 1rem;
+      background: var(--surface);
+      color: var(--text);
+      margin-bottom: 16px;
+    }
+    .search-bar:focus { outline: none; border-color: var(--accent); }
+    .song-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px;
+      margin-bottom: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+      box-shadow: var(--card-shadow);
+    }
+    .song-card:hover { border-color: var(--accent); transform: translateY(-1px); }
+    .song-card h3 { font-size: 1.1rem; margin-bottom: 4px; }
+    .song-card .meta { color: var(--muted); font-size: 0.85rem; }
+    /* Viewer */
+    .viewer-header {
+      text-align: center;
+      margin-bottom: 24px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    .viewer-header h2 { font-size: 1.4rem; margin-bottom: 4px; }
+    .viewer-header .meta { color: var(--muted); font-size: 0.9rem; }
+    .controls-bar {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+    }
+    .control-group {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 6px 12px;
+    }
+    .control-group label { font-size: 0.8rem; color: var(--muted); }
+    .chord-line {
+      font-family: 'Courier New', monospace;
+      color: var(--chord);
+      font-weight: 700;
+      font-size: 0.95rem;
+      white-space: pre;
+      margin-top: 16px;
+      letter-spacing: 0.5px;
+    }
+    .lyric-line {
+      font-size: 1rem;
+      white-space: pre;
+      line-height: 1.4;
+    }
+    .song-lines { padding: 8px 0; }
+    /* Setlist */
+    .setlist-section { margin-bottom: 24px; }
+    .setlist-section h3 { font-size: 1.1rem; margin-bottom: 12px; }
+    .setlist-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 12px;
+      margin-bottom: 8px;
+    }
+    .setlist-item .order { font-weight: 700; color: var(--muted); min-width: 24px; }
+    .setlist-item .name { flex: 1; }
+    .setlist-item .actions { display: flex; gap: 4px; }
+    /* Settings */
+    .setting-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      margin-bottom: 12px;
+    }
+    .setting-row .label { font-weight: 500; }
+    .setting-row .desc { font-size: 0.85rem; color: var(--muted); }
+    .pill-group { display: flex; gap: 0; }
+    .pill {
+      padding: 6px 14px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text);
+      cursor: pointer;
+      font-size: 0.85rem;
+      transition: all 0.2s;
+    }
+    .pill:first-child { border-radius: 6px 0 0 6px; }
+    .pill:last-child { border-radius: 0 6px 6px 0; }
+    .pill.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+    .setlist-nav {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 24px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border);
+    }
+    .empty-state {
+      text-align: center;
+      padding: 48px 16px;
+      color: var(--muted);
+    }
+    @media (max-width: 600px) {
+      header h1 { font-size: 1.1rem; }
+      nav button { padding: 10px 14px; font-size: 0.85rem; }
+      main { padding: 16px 12px; }
+    }
+  </style>
 </head>
 <body>
-    <header>
-        <h1>Welcome to Music-ABCF</h1>
-        <nav>
-            <ul>
-                <li><a href="#features">Features</a></li>
-                <li><a href="#demo">Demo</a></li>
-                <li><a href="#contact">Contact</a></li>
-            </ul>
-        </nav>
-    </header>
-    <main>
-        <section id="features">
-            <h2>Features</h2>
-            <ul>
-                <li>Feature 1: Real-time collaboration</li>
-                <li>Feature 2: Extensive music library</li>
-                <li>Feature 3: User-friendly interface</li>
-            </ul>
-        </section>
-        <section id="demo">
-            <h2>Demo</h2>
-            <p>Experience Music-ABCF in action!</p>
-            <button onclick="alert('Demo coming soon!')">Start Demo</button>
-        </section>
-        <section id="contact">
-            <h2>Contact Us</h2>
-            <p>Email: support@music-abcf.com</p>
-        </section>
-    </main>
-    <footer>
-        <p>&copy; 2026 Music-ABCF. All rights reserved.</p>
-    </footer>
+  <header>
+    <h1>Music ABCF</h1>
+    <div class="header-controls">
+      <button class="toggle-btn" id="darkToggle" title="Toggle dark mode">Dark Mode</button>
+    </div>
+  </header>
+  <nav>
+    <button class="active" data-tab="library">Song Library</button>
+    <button data-tab="setlists">Setlists</button>
+    <button data-tab="settings">Settings</button>
+  </nav>
+  <main id="app"></main>
+
+  <script>
+    // ========== DATA ==========
+    const SHARP_NOTES = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+    const FLAT_NOTES  = ['C','Db','D','Eb','E','F','Gb','G','Ab','A','Bb','B'];
+    const NASHVILLE   = ['1','b2','2','b3','3','4','b5','5','b6','6','b7','7'];
+    const NOTE_INDEX = {};
+    SHARP_NOTES.forEach((n,i) => NOTE_INDEX[n] = i);
+    FLAT_NOTES.forEach((n,i) => NOTE_INDEX[n] = i);
+
+    const songs = [
+      { id:'1', title:'Amazing Grace', artist:'John Newton', key:'G', lines:[
+        {chords:'G        G7       C        G', lyrics:'Amazing grace how sweet the sound'},
+        {chords:'G        Em       A7       D', lyrics:'That saved a wretch like me'},
+        {chords:'G        G7       C        G', lyrics:'I once was lost but now am found'},
+        {chords:'G        Em  D    G',          lyrics:'Was blind but now I see'},
+      ]},
+      { id:'2', title:'How Great Thou Art', artist:'Carl Boberg', key:'Bb', lines:[
+        {chords:'Bb       Eb       Bb',        lyrics:'O Lord my God when I in awesome wonder'},
+        {chords:'Bb       F        Bb',         lyrics:'Consider all the worlds Thy hands have made'},
+        {chords:'Eb       Bb       F',          lyrics:'Then sings my soul my Saviour God to Thee'},
+        {chords:'Bb       Eb  F    Bb',         lyrics:'How great Thou art how great Thou art'},
+      ]},
+      { id:'3', title:'Be Thou My Vision', artist:'Traditional Irish Hymn', key:'D', lines:[
+        {chords:'D        G        D',          lyrics:'Be Thou my vision O Lord of my heart'},
+        {chords:'Bm       G   A    D',          lyrics:'Naught be all else to me save that Thou art'},
+        {chords:'D        G        D',          lyrics:'Thou my best thought by day or by night'},
+        {chords:'Bm       G   A    D',          lyrics:'Waking or sleeping Thy presence my light'},
+      ]},
+    ];
+
+    const setlists = [
+      { id:'sl-1', name:'Sunday Service', songIds:['1','2'] },
+      { id:'sl-2', name:'Special Event',  songIds:['3','1'] },
+    ];
+
+    // ========== STATE ==========
+    let state = {
+      tab: 'library',
+      viewingSong: null,
+      viewingSetlist: null,
+      setlistIndex: 0,
+      transpose: 0,
+      notation: 'standard',
+      accidental: 'sharp',
+      darkMode: false,
+      search: '',
+    };
+
+    // ========== CHORD FUNCTIONS ==========
+    function transposeChord(chord, semitones, pref) {
+      const notes = pref === 'sharp' ? SHARP_NOTES : FLAT_NOTES;
+      const m = chord.match(/^([A-G][#b]?)(.*)/);
+      if (!m) return chord;
+      const idx = NOTE_INDEX[m[1]];
+      if (idx === undefined) return chord;
+      return notes[((idx + semitones % 12) + 12) % 12] + m[2];
+    }
+
+    function transposeLine(line, semitones, pref) {
+      return line.replace(/[A-G][#b]?[a-z0-9]*/g, m => transposeChord(m, semitones, pref));
+    }
+
+    function chordToNashville(chord, keyRoot) {
+      const m = chord.match(/^([A-G][#b]?)(.*)/);
+      if (!m) return chord;
+      const ri = NOTE_INDEX[m[1]], ki = NOTE_INDEX[keyRoot];
+      if (ri === undefined || ki === undefined) return chord;
+      return NASHVILLE[((ri - ki) + 12) % 12] + m[2];
+    }
+
+    function nashvilleLine(line, keyRoot) {
+      return line.replace(/[A-G][#b]?[a-z0-9]*/g, m => chordToNashville(m, keyRoot));
+    }
+
+    // ========== RENDERING ==========
+    const app = document.getElementById('app');
+
+    function render() {
+      if (state.viewingSong) return renderViewer();
+      switch(state.tab) {
+        case 'library': return renderLibrary();
+        case 'setlists': return renderSetlists();
+        case 'settings': return renderSettings();
+      }
+    }
+
+    function renderLibrary() {
+      const q = state.search.toLowerCase();
+      const filtered = songs.filter(s =>
+        s.title.toLowerCase().includes(q) || s.artist.toLowerCase().includes(q)
+      );
+      app.innerHTML = `
+        <input class="search-bar" placeholder="Search songs..." value="${esc(state.search)}" id="searchInput" />
+        ${filtered.length === 0 ? '<div class="empty-state">No songs found</div>' :
+          filtered.map(s => `
+            <div class="song-card" data-song="${s.id}">
+              <h3>${esc(s.title)}</h3>
+              <div class="meta">${esc(s.artist)} &middot; Key of ${esc(s.key)}</div>
+            </div>
+          `).join('')}
+      `;
+      document.getElementById('searchInput').addEventListener('input', e => {
+        state.search = e.target.value;
+        renderLibrary();
+      });
+      app.querySelectorAll('.song-card').forEach(el => {
+        el.addEventListener('click', () => {
+          state.viewingSong = songs.find(s => s.id === el.dataset.song);
+          state.transpose = 0;
+          state.viewingSetlist = null;
+          render();
+        });
+      });
+    }
+
+    function renderViewer() {
+      const song = state.viewingSong;
+      const sl = state.viewingSetlist;
+      const t = state.transpose;
+      const notationLabel = state.notation === 'standard' ? 'Standard' : 'Nashville';
+
+      let linesHtml = '';
+      song.lines.forEach(line => {
+        let chords = line.chords;
+        if (state.notation === 'nashville') {
+          chords = nashvilleLine(chords, song.key);
+        } else if (t !== 0) {
+          chords = transposeLine(chords, t, state.accidental);
+        }
+        linesHtml += `<div class="chord-line">${esc(chords)}</div>`;
+        linesHtml += `<div class="lyric-line">${esc(line.lyrics)}</div>`;
+      });
+
+      const keyDisplay = t !== 0 && state.notation === 'standard'
+        ? transposeChord(song.key, t, state.accidental)
+        : song.key;
+
+      app.innerHTML = `
+        <button class="btn btn-outline" id="backBtn">&larr; Back</button>
+        <div class="viewer-header">
+          <h2>${esc(song.title)}</h2>
+          <div class="meta">${esc(song.artist)} &middot; Key: ${esc(keyDisplay)}</div>
+        </div>
+        <div class="controls-bar">
+          <div class="control-group">
+            <label>Transpose</label>
+            <button class="btn btn-sm btn-primary" id="tDown">-</button>
+            <span style="min-width:30px;text-align:center">${t >= 0 ? '+' : ''}${t}</span>
+            <button class="btn btn-sm btn-primary" id="tUp">+</button>
+          </div>
+          <div class="control-group">
+            <label>Notation</label>
+            <div class="pill-group">
+              <button class="pill ${state.notation==='standard'?'active':''}" data-n="standard">Standard</button>
+              <button class="pill ${state.notation==='nashville'?'active':''}" data-n="nashville">Nashville</button>
+            </div>
+          </div>
+          <div class="control-group">
+            <label>Accidentals</label>
+            <div class="pill-group">
+              <button class="pill ${state.accidental==='sharp'?'active':''}" data-a="sharp">#</button>
+              <button class="pill ${state.accidental==='flat'?'active':''}" data-a="flat">b</button>
+            </div>
+          </div>
+        </div>
+        <div class="song-lines">${linesHtml}</div>
+        ${sl ? renderSetlistNav() : ''}
+      `;
+
+      document.getElementById('backBtn').addEventListener('click', () => {
+        state.viewingSong = null;
+        state.viewingSetlist = null;
+        render();
+      });
+      document.getElementById('tDown').addEventListener('click', () => { state.transpose--; render(); });
+      document.getElementById('tUp').addEventListener('click', () => { state.transpose++; render(); });
+      app.querySelectorAll('[data-n]').forEach(el => {
+        el.addEventListener('click', () => { state.notation = el.dataset.n; render(); });
+      });
+      app.querySelectorAll('[data-a]').forEach(el => {
+        el.addEventListener('click', () => { state.accidental = el.dataset.a; render(); });
+      });
+      if (sl) {
+        const prev = document.getElementById('slPrev');
+        const next = document.getElementById('slNext');
+        if (prev) prev.addEventListener('click', () => {
+          state.setlistIndex--;
+          state.viewingSong = songs.find(s => s.id === sl.songIds[state.setlistIndex]);
+          state.transpose = 0;
+          render();
+        });
+        if (next) next.addEventListener('click', () => {
+          state.setlistIndex++;
+          state.viewingSong = songs.find(s => s.id === sl.songIds[state.setlistIndex]);
+          state.transpose = 0;
+          render();
+        });
+      }
+    }
+
+    function renderSetlistNav() {
+      const sl = state.viewingSetlist;
+      const i = state.setlistIndex;
+      return `<div class="setlist-nav">
+        ${i > 0 ? `<button class="btn btn-outline" id="slPrev">&larr; Previous</button>` : '<span></span>'}
+        <span style="color:var(--muted);font-size:0.85rem">${i+1} / ${sl.songIds.length}</span>
+        ${i < sl.songIds.length - 1 ? `<button class="btn btn-outline" id="slNext">Next &rarr;</button>` : '<span></span>'}
+      </div>`;
+    }
+
+    function renderSetlists() {
+      app.innerHTML = setlists.map(sl => {
+        const slSongs = sl.songIds.map((id,i) => {
+          const s = songs.find(x => x.id === id);
+          return s ? `<div class="setlist-item">
+            <span class="order">${i+1}</span>
+            <span class="name">${esc(s.title)}</span>
+          </div>` : '';
+        }).join('');
+        return `<div class="setlist-section">
+          <h3>${esc(sl.name)}</h3>
+          ${slSongs}
+          <button class="btn btn-primary btn-sm" data-play="${sl.id}" style="margin-top:8px">Play Setlist</button>
+        </div>`;
+      }).join('');
+
+      app.querySelectorAll('[data-play]').forEach(el => {
+        el.addEventListener('click', () => {
+          const sl = setlists.find(x => x.id === el.dataset.play);
+          if (sl && sl.songIds.length > 0) {
+            state.viewingSetlist = sl;
+            state.setlistIndex = 0;
+            state.viewingSong = songs.find(s => s.id === sl.songIds[0]);
+            state.transpose = 0;
+            render();
+          }
+        });
+      });
+    }
+
+    function renderSettings() {
+      app.innerHTML = `
+        <div class="setting-row">
+          <div>
+            <div class="label">Dark Mode</div>
+            <div class="desc">Toggle dark theme</div>
+          </div>
+          <button class="toggle-btn" id="darkSetting">${state.darkMode ? 'On' : 'Off'}</button>
+        </div>
+        <div class="setting-row">
+          <div>
+            <div class="label">Accidental Preference</div>
+            <div class="desc">Choose sharp (#) or flat (b) notation</div>
+          </div>
+          <div class="pill-group">
+            <button class="pill ${state.accidental==='sharp'?'active':''}" data-acc="sharp"># Sharp</button>
+            <button class="pill ${state.accidental==='flat'?'active':''}" data-acc="flat">b Flat</button>
+          </div>
+        </div>
+        <div class="setting-row">
+          <div>
+            <div class="label">Default Notation</div>
+            <div class="desc">Standard chords or Nashville numbers</div>
+          </div>
+          <div class="pill-group">
+            <button class="pill ${state.notation==='standard'?'active':''}" data-not="standard">Standard</button>
+            <button class="pill ${state.notation==='nashville'?'active':''}" data-not="nashville">Nashville</button>
+          </div>
+        </div>
+      `;
+      document.getElementById('darkSetting').addEventListener('click', () => {
+        state.darkMode = !state.darkMode;
+        applyDark();
+        render();
+      });
+      app.querySelectorAll('[data-acc]').forEach(el => {
+        el.addEventListener('click', () => { state.accidental = el.dataset.acc; render(); });
+      });
+      app.querySelectorAll('[data-not]').forEach(el => {
+        el.addEventListener('click', () => { state.notation = el.dataset.not; render(); });
+      });
+    }
+
+    function esc(str) {
+      const d = document.createElement('div');
+      d.textContent = str;
+      return d.innerHTML;
+    }
+
+    // ========== NAV & DARK MODE ==========
+    document.querySelectorAll('nav button').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        state.tab = btn.dataset.tab;
+        state.viewingSong = null;
+        state.viewingSetlist = null;
+        render();
+      });
+    });
+
+    function applyDark() {
+      document.body.classList.toggle('dark', state.darkMode);
+      document.getElementById('darkToggle').textContent = state.darkMode ? 'Light Mode' : 'Dark Mode';
+    }
+    document.getElementById('darkToggle').addEventListener('click', () => {
+      state.darkMode = !state.darkMode;
+      applyDark();
+      if (state.tab === 'settings') render();
+    });
+
+    // ========== INIT ==========
+    render();
+  </script>
 </body>
 </html>
