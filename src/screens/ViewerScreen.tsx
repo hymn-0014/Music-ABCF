@@ -9,7 +9,6 @@ const ViewerScreen = ({ navigation }: any) => {
   const setCurrentSongId = useAppStore((s) => s.setCurrentSongId);
   const currentSetlistId = useAppStore((s) => s.currentSetlistId);
   const setlists = useAppStore((s) => s.setlists);
-  const darkMode = useAppStore((s) => s.darkMode);
 
   const song = songs.find((s) => s.id === currentSongId);
   const setlist = setlists.find((sl) => sl.id === currentSetlistId);
@@ -27,19 +26,16 @@ const ViewerScreen = ({ navigation }: any) => {
   if (!song) {
     return (
       <View style={styles.center}>
-        <Text>No song selected.</Text>
+        <Text style={{ color: '#FFFFFF' }}>No song selected.</Text>
       </View>
     );
   }
 
-  const bg = darkMode ? '#1a1a1a' : '#fff';
-  const text = darkMode ? '#eee' : '#000';
-
   return (
-    <View style={[styles.container, { backgroundColor: bg }]}>  
-      <Text style={[styles.title, { color: text }]}>{song.title}</Text>
-      <Text style={[styles.artist, { color: darkMode ? '#aaa' : '#666' }]}>{song.artist} · Key of {song.key}</Text>
-      <SongChordViewer song={song} darkMode={darkMode} />
+    <View style={styles.container}>
+      <Text style={styles.title}>{song.title}</Text>
+      <Text style={styles.artist}>{song.artist} · Key of {song.key}</Text>
+      <SongChordViewer song={song} />
       {setlistSongIds.length > 1 && (
         <View style={styles.navRow}>
           <TouchableOpacity style={[styles.navBtn, currentIndex <= 0 && styles.disabled]} onPress={goPrev} disabled={currentIndex <= 0}>
@@ -55,13 +51,13 @@ const ViewerScreen = ({ navigation }: any) => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16 },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  title: { fontSize: 24, fontWeight: 'bold' },
-  artist: { fontSize: 14, marginBottom: 8 },
+  container: { flex: 1, padding: 16, backgroundColor: '#121212' },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#121212' },
+  title: { fontSize: 24, fontWeight: 'bold', color: '#FFFFFF' },
+  artist: { fontSize: 14, marginBottom: 8, color: '#AAA' },
   navRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 12 },
-  navBtn: { backgroundColor: '#007AFF', borderRadius: 8, paddingVertical: 10, paddingHorizontal: 24 },
-  navText: { color: '#fff', fontSize: 16, fontWeight: '600' },
+  navBtn: { backgroundColor: '#4FC3F7', borderRadius: 8, paddingVertical: 10, paddingHorizontal: 24 },
+  navText: { color: '#121212', fontSize: 16, fontWeight: '600' },
   disabled: { opacity: 0.4 },
 });
 

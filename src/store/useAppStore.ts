@@ -46,7 +46,7 @@ const useAppStore = create<AppState>((set, get) => ({
   transpose: 0,
   notation: 'standard',
   accidental: 'sharp',
-  darkMode: false,
+  darkMode: true,
   setSongs: (songs) => set({ songs }),
   setSetlists: (setlists) => set({ setlists }),
   setCurrentSongId: (id) => set({ currentSongId: id, transpose: 0 }),

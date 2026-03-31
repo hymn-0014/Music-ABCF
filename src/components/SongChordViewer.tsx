@@ -7,10 +7,9 @@ import ChordDisplay from './ChordDisplay';
 
 interface SongChordViewerProps {
   song: Song;
-  darkMode?: boolean;
 }
 
-const SongChordViewer: React.FC<SongChordViewerProps> = ({ song, darkMode = false }) => {
+const SongChordViewer: React.FC<SongChordViewerProps> = ({ song }) => {
   const [transpose, setTranspose] = useState(0);
   const [notation, setNotation] = useState<NotationMode>('standard');
   const [accidental, setAccidental] = useState<AccidentalPreference>('sharp');
@@ -33,7 +32,6 @@ const SongChordViewer: React.FC<SongChordViewerProps> = ({ song, darkMode = fals
         songKey={song.key}
         notation={notation}
         accidental={accidental}
-        darkMode={darkMode}
       />
     </View>
   );

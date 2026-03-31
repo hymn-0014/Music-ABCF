@@ -75,13 +75,13 @@ const SetlistManager: React.FC<SetlistManagerProps> = ({ availableSongs, songIds
 
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 16 },
-  heading: { fontSize: 20, fontWeight: 'bold', marginVertical: 8 },
-  row: { flexDirection: 'row', alignItems: 'center', paddingVertical: 8, borderBottomWidth: 1, borderColor: '#ddd' },
+  heading: { fontSize: 20, fontWeight: 'bold', marginVertical: 8, color: '#FFFFFF' },
+  row: { flexDirection: 'row', alignItems: 'center', paddingVertical: 8, borderBottomWidth: 1, borderColor: '#333' },
   addRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 8 },
-  songTitle: { flex: 1, fontSize: 16 },
-  action: { fontSize: 20, paddingHorizontal: 8, color: '#007AFF' },
-  remove: { fontSize: 18, paddingHorizontal: 8, color: '#ff3b30' },
-  input: { borderWidth: 1, borderColor: '#ccc', borderRadius: 8, padding: 8, marginBottom: 8 },
+  songTitle: { flex: 1, fontSize: 16, color: '#FFFFFF' },
+  action: { fontSize: 20, paddingHorizontal: 8, color: '#4FC3F7' },
+  remove: { fontSize: 18, paddingHorizontal: 8, color: '#FF5252' },
+  input: { borderWidth: 1, borderColor: '#333', borderRadius: 8, padding: 8, marginBottom: 8, color: '#FFFFFF', backgroundColor: '#1E1E1E' },
 });
 
 export default SetlistManager;

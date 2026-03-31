@@ -56,7 +56,7 @@ const LoginScreen = () => {
       <TextInput
         style={styles.input}
         placeholder="Email"
-        placeholderTextColor="#999"
+        placeholderTextColor="#888"
         autoCapitalize="none"
         keyboardType="email-address"
         value={email}
@@ -65,7 +65,7 @@ const LoginScreen = () => {
       <TextInput
         style={styles.input}
         placeholder="Password"
-        placeholderTextColor="#999"
+        placeholderTextColor="#888"
         secureTextEntry
         value={password}
         onChangeText={setPassword}
@@ -73,7 +73,7 @@ const LoginScreen = () => {
 
       <TouchableOpacity style={styles.btn} onPress={handleSubmit} disabled={loading}>
         {loading ? (
-          <ActivityIndicator color="#fff" />
+          <ActivityIndicator color="#121212" />
         ) : (
           <Text style={styles.btnText}>{isSignUp ? 'Sign Up' : 'Sign In'}</Text>
         )}
@@ -107,19 +107,19 @@ const LoginScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: 'center', padding: 32, backgroundColor: '#fff' },
-  title: { fontSize: 32, fontWeight: 'bold', textAlign: 'center', marginBottom: 4 },
-  subtitle: { fontSize: 18, textAlign: 'center', marginBottom: 24, color: '#666' },
-  error: { color: '#d32f2f', textAlign: 'center', marginBottom: 12 },
+  container: { flex: 1, justifyContent: 'center', padding: 32, backgroundColor: '#121212' },
+  title: { fontSize: 32, fontWeight: 'bold', textAlign: 'center', marginBottom: 4, color: '#FFFFFF' },
+  subtitle: { fontSize: 18, textAlign: 'center', marginBottom: 24, color: '#999' },
+  error: { color: '#FF6B6B', textAlign: 'center', marginBottom: 12 },
   input: {
-    borderWidth: 1, borderColor: '#ccc', borderRadius: 8,
-    padding: 14, fontSize: 16, marginBottom: 12,
+    borderWidth: 1, borderColor: '#333', borderRadius: 8,
+    padding: 14, fontSize: 16, marginBottom: 12, color: '#FFFFFF', backgroundColor: '#1E1E1E',
   },
   btn: {
-    backgroundColor: '#007AFF', borderRadius: 12,
+    backgroundColor: '#4FC3F7', borderRadius: 12,
     paddingVertical: 14, alignItems: 'center', marginTop: 8,
   },
-  btnText: { color: '#fff', fontSize: 18, fontWeight: '600' },
+  btnText: { color: '#121212', fontSize: 18, fontWeight: '600' },
   dividerRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -129,10 +129,10 @@ const styles = StyleSheet.create({
   dividerLine: {
     flex: 1,
     height: 1,
-    backgroundColor: '#d9d9d9',
+    backgroundColor: '#333',
   },
   dividerText: {
-    color: '#666',
+    color: '#888',
     marginHorizontal: 12,
     fontSize: 13,
   },
@@ -143,16 +143,16 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   googleBtn: {
-    backgroundColor: '#ffffff',
+    backgroundColor: '#1E1E1E',
     borderWidth: 1,
-    borderColor: '#d6d6d6',
+    borderColor: '#333',
   },
   googleBtnText: {
-    color: '#222',
+    color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '600',
   },
-  toggle: { color: '#007AFF', textAlign: 'center', marginTop: 20, fontSize: 14 },
+  toggle: { color: '#4FC3F7', textAlign: 'center', marginTop: 20, fontSize: 14 },
 });
 
 export default LoginScreen;

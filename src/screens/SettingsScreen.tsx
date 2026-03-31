@@ -12,9 +12,6 @@ const SettingsScreen = () => {
   const pullFromCloud = useAppStore((s) => s.pullFromCloud);
   const [syncing, setSyncing] = useState(false);
 
-  const bg = darkMode ? '#1a1a1a' : '#fff';
-  const text = darkMode ? '#eee' : '#000';
-
   const handleSync = async (direction: 'push' | 'pull') => {
     setSyncing(true);
     try {
@@ -26,30 +23,31 @@ const SettingsScreen = () => {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: bg }]}>  
-      <Text style={[styles.heading, { color: text }]}>Settings</Text>
+    <View style={styles.container}>
+      <Text style={styles.heading}>Settings</Text>
 
       <View style={styles.row}>
-        <Text style={[styles.label, { color: text }]}>Dark Mode</Text>
-        <Switch value={darkMode} onValueChange={toggleDarkMode} />
+        <Text style={styles.label}>Dark Mode</Text>
+        <Switch value={darkMode} onValueChange={toggleDarkMode} trackColor={{ true: '#4FC3F7' }} />
       </View>
 
       <View style={styles.row}>
-        <Text style={[styles.label, { color: text }]}>Prefer Sharps</Text>
+        <Text style={styles.label}>Prefer Sharps</Text>
         <Switch
           value={accidental === 'sharp'}
           onValueChange={(v) => setAccidental(v ? 'sharp' : 'flat')}
+          trackColor={{ true: '#4FC3F7' }}
         />
       </View>
 
-      <Text style={[styles.sectionTitle, { color: text }]}>Cloud Sync</Text>
+      <Text style={styles.sectionTitle}>Cloud Sync</Text>
 
       <View style={styles.syncRow}>
         <TouchableOpacity style={styles.syncBtn} onPress={() => handleSync('push')} disabled={syncing}>
-          {syncing ? <ActivityIndicator color="#fff" size="small" /> : <Text style={styles.syncText}>Upload to Cloud</Text>}
+          {syncing ? <ActivityIndicator color="#121212" size="small" /> : <Text style={styles.syncText}>Upload to Cloud</Text>}
         </TouchableOpacity>
-        <TouchableOpacity style={[styles.syncBtn, { backgroundColor: '#34C759' }]} onPress={() => handleSync('pull')} disabled={syncing}>
-          {syncing ? <ActivityIndicator color="#fff" size="small" /> : <Text style={styles.syncText}>Download from Cloud</Text>}
+        <TouchableOpacity style={[styles.syncBtn, { backgroundColor: '#66BB6A' }]} onPress={() => handleSync('pull')} disabled={syncing}>
+          {syncing ? <ActivityIndicator color="#121212" size="small" /> : <Text style={styles.syncText}>Download from Cloud</Text>}
         </TouchableOpacity>
       </View>
 
@@ -61,15 +59,15 @@ const SettingsScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 24 },
-  heading: { fontSize: 22, fontWeight: 'bold', marginBottom: 24 },
-  row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 14, borderBottomWidth: 1, borderColor: '#ddd' },
-  label: { fontSize: 16 },
-  sectionTitle: { fontSize: 18, fontWeight: '600', marginTop: 28, marginBottom: 12 },
+  container: { flex: 1, padding: 24, backgroundColor: '#121212' },
+  heading: { fontSize: 22, fontWeight: 'bold', marginBottom: 24, color: '#FFFFFF' },
+  row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 14, borderBottomWidth: 1, borderColor: '#333' },
+  label: { fontSize: 16, color: '#FFFFFF' },
+  sectionTitle: { fontSize: 18, fontWeight: '600', marginTop: 28, marginBottom: 12, color: '#FFFFFF' },
   syncRow: { flexDirection: 'row', gap: 12 },
-  syncBtn: { flex: 1, backgroundColor: '#007AFF', borderRadius: 10, paddingVertical: 12, alignItems: 'center' },
-  syncText: { color: '#fff', fontWeight: '600', fontSize: 14 },
-  signOutBtn: { marginTop: 32, backgroundColor: '#FF3B30', borderRadius: 12, paddingVertical: 14, alignItems: 'center' },
+  syncBtn: { flex: 1, backgroundColor: '#4FC3F7', borderRadius: 10, paddingVertical: 12, alignItems: 'center' },
+  syncText: { color: '#121212', fontWeight: '600', fontSize: 14 },
+  signOutBtn: { marginTop: 32, backgroundColor: '#FF5252', borderRadius: 12, paddingVertical: 14, alignItems: 'center' },
   signOutText: { color: '#fff', fontSize: 16, fontWeight: '600' },
 });
 

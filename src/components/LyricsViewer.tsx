@@ -9,18 +9,13 @@ interface LyricsViewerProps {
   songKey: string;
   notation: NotationMode;
   accidental: AccidentalPreference;
-  darkMode?: boolean;
 }
 
 const LyricsViewer: React.FC<LyricsViewerProps> = ({
-  lines, transpose, songKey, notation, accidental, darkMode = false,
+  lines, transpose, songKey, notation, accidental,
 }) => {
-  const bg = darkMode ? '#1a1a1a' : '#fff';
-  const textColor = darkMode ? '#eee' : '#000';
-  const chordColor = darkMode ? '#6cb4ee' : '#007AFF';
-
   return (
-    <ScrollView style={[styles.container, { backgroundColor: bg }]}>
+    <ScrollView style={styles.container}>
       {lines.map((line, i) => {
         let displayChords = line.chords;
         if (displayChords) {
@@ -32,9 +27,9 @@ const LyricsViewer: React.FC<LyricsViewerProps> = ({
         return (
           <View key={i} style={styles.lineBlock}>
             {displayChords ? (
-              <Text style={[styles.chordLine, { color: chordColor }]}>{displayChords}</Text>
+              <Text style={styles.chordLine}>{displayChords}</Text>
             ) : null}
-            <Text style={[styles.lyricLine, { color: textColor }]}>{line.lyrics}</Text>
+            <Text style={styles.lyricLine}>{line.lyrics}</Text>
           </View>
         );
       })}
@@ -43,10 +38,10 @@ const LyricsViewer: React.FC<LyricsViewerProps> = ({
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16 },
+  container: { flex: 1, padding: 16, backgroundColor: '#121212' },
   lineBlock: { marginBottom: 4 },
-  chordLine: { fontFamily: 'monospace', fontSize: 18, fontWeight: 'bold' },
-  lyricLine: { fontFamily: 'monospace', fontSize: 18 },
+  chordLine: { fontFamily: 'monospace', fontSize: 18, fontWeight: 'bold', color: '#4FC3F7' },
+  lyricLine: { fontFamily: 'monospace', fontSize: 18, color: '#FFFFFF' },
 });
 
 export default LyricsViewer;

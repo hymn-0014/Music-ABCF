@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { NavigationContainer } from '@react-navigation/native';
+import { NavigationContainer, DefaultTheme } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { ActivityIndicator, View } from 'react-native';
+import { ActivityIndicator, View, Platform } from 'react-native';
 import HomeScreen from './screens/HomeScreen';
 import SongLibraryScreen from './screens/SongLibraryScreen';
 import SetlistScreen from './screens/SetlistScreen';
@@ -16,9 +16,30 @@ import useAppStore from './store/useAppStore';
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
 
+const AppDarkTheme = {
+  ...DefaultTheme,
+  dark: true,
+  colors: {
+    ...DefaultTheme.colors,
+    primary: '#4FC3F7',
+    background: '#121212',
+    card: '#1E1E1E',
+    text: '#FFFFFF',
+    border: '#333333',
+    notification: '#4FC3F7',
+  },
+};
+
 function MainTabs() {
   return (
-    <Tab.Navigator screenOptions={{ headerShown: false }}>
+    <Tab.Navigator
+      screenOptions={{
+        headerShown: false,
+        tabBarStyle: { backgroundColor: '#1E1E1E', borderTopColor: '#333' },
+        tabBarActiveTintColor: '#4FC3F7',
+        tabBarInactiveTintColor: '#888',
+      }}
+    >
       <Tab.Screen name="Home" component={HomeScreen} />
       <Tab.Screen name="SongLibrary" component={SongLibraryScreen} options={{ title: 'Songs' }} />
       <Tab.Screen name="Setlists" component={SetlistScreen} />
@@ -26,6 +47,8 @@ function MainTabs() {
     </Tab.Navigator>
   );
 }
+
+const linking = Platform.OS === 'web' ? { prefixes: [] as string[], config: { screens: { Main: '', Viewer: 'viewer', AddSong: 'add-song' } } } : undefined;
 
 export default function App() {
   const [loading, setLoading] = useState(true);
@@ -46,8 +69,8 @@ export default function App() {
 
   if (loading) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-        <ActivityIndicator size="large" color="#007AFF" />
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#121212' }}>
+        <ActivityIndicator size="large" color="#4FC3F7" />
       </View>
     );
   }
@@ -57,8 +80,8 @@ export default function App() {
   }
 
   return (
-    <NavigationContainer>
-      <Stack.Navigator>
+    <NavigationContainer theme={AppDarkTheme} linking={linking} documentTitle={{ formatter: () => 'Music-ABCF' }}>
+      <Stack.Navigator screenOptions={{ headerStyle: { backgroundColor: '#1E1E1E' }, headerTintColor: '#FFFFFF' }}>
         <Stack.Screen name="Main" component={MainTabs} options={{ headerShown: false }} />
         <Stack.Screen name="Viewer" component={ViewerScreen} options={{ title: 'Now Playing' }} />
         <Stack.Screen name="AddSong" component={AddSongScreen} options={{ title: 'Add Song' }} />

@@ -20,9 +20,9 @@ const ChordDisplay: React.FC<ChordDisplayProps> = ({ notation, onToggle }) => (
 
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', padding: 8 },
-  label: { fontSize: 16, marginRight: 8 },
+  label: { fontSize: 16, marginRight: 8, color: '#FFFFFF' },
   pill: { backgroundColor: '#333', paddingHorizontal: 14, paddingVertical: 6, borderRadius: 16 },
-  pillText: { color: '#fff', fontSize: 14 },
+  pillText: { color: '#4FC3F7', fontSize: 14 },
 });
 
 export default ChordDisplay;

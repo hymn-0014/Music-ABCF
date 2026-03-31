@@ -32,11 +32,11 @@ const TransposeControl: React.FC<TransposeControlProps> = ({
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', padding: 8 },
   btn: {
-    width: 44, height: 44, borderRadius: 22, backgroundColor: '#007AFF',
+    width: 44, height: 44, borderRadius: 22, backgroundColor: '#4FC3F7',
     alignItems: 'center', justifyContent: 'center',
   },
-  btnText: { color: '#fff', fontSize: 22, fontWeight: 'bold' },
-  level: { fontSize: 20, marginHorizontal: 12, minWidth: 30, textAlign: 'center' },
+  btnText: { color: '#121212', fontSize: 22, fontWeight: 'bold' },
+  level: { fontSize: 20, marginHorizontal: 12, minWidth: 30, textAlign: 'center', color: '#FFFFFF' },
 });
 
 export default TransposeControl;

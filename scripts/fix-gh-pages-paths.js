@@ -10,16 +10,17 @@ if (!fs.existsSync(distIndexPath)) {
 
 const html = fs.readFileSync(distIndexPath, 'utf8');
 
-// Expo web export emits a root-absolute script URL. This breaks on project pages
-// where the app is hosted under /<repo-name>/. Rewrite it to a relative URL.
-const fixedHtml = html.replace(
-  /(<script\s+src=")\/_expo\//g,
-  '$1./_expo/'
-);
+// Expo web export emits root-absolute URLs for scripts and assets.
+// This breaks on GitHub Pages project sites hosted under /<repo-name>/.
+// Rewrite all root-absolute paths to relative ones.
+let fixedHtml = html;
+
+// Fix script/link/img src and href that start with /
+fixedHtml = fixedHtml.replace(/((?:src|href)=")\/(?!\/)/g, '$1./');
 
 if (fixedHtml !== html) {
   fs.writeFileSync(distIndexPath, fixedHtml, 'utf8');
-  console.log('Updated dist/index.html to use relative _expo asset paths.');
+  console.log('Updated dist/index.html to use relative asset paths.');
 } else {
-  console.log('No root-absolute _expo asset paths found in dist/index.html.');
+  console.log('No root-absolute asset paths found in dist/index.html.');
 }
