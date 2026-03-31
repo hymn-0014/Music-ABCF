@@ -1268,3 +1268,305 @@ html:not(.dark) .mod-time { color: #999; }
 .toggle-switch input:checked + .toggle-slider::after {
   transform: translateX(22px);
 }
+
+/* ============================================================
+   MOBILE RESPONSIVE — max-width: 600px
+   ============================================================ */
+@media (max-width: 600px) {
+
+  /* --- Toolbar: stack left/right vertically --- */
+  .toolbar {
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 6px 8px;
+  }
+  .toolbar-left,
+  .toolbar-right {
+    width: 100%;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  /* --- Shrink transpose buttons --- */
+  .transpose-row {
+    padding: 4px;
+    gap: 2px;
+  }
+  .transpose-row .round-btn {
+    width: 36px;
+    height: 36px;
+    font-size: 18px;
+  }
+  .transpose-level {
+    font-size: 16px;
+    min-width: 28px;
+  }
+
+  /* --- Shrink toolbar speed controls --- */
+  .toolbar-speed {
+    gap: 4px;
+  }
+  .toolbar-speed .round-btn.sm {
+    width: 28px;
+    height: 28px;
+    font-size: 16px;
+  }
+  .toolbar-speed-value {
+    min-width: 40px;
+    font-size: 12px;
+  }
+  .toggle-pill.sm {
+    padding: 6px 10px;
+    font-size: 12px;
+  }
+
+  /* --- Toolbar action buttons smaller --- */
+  .toolbar-btn {
+    padding: 6px 10px;
+    font-size: 14px;
+  }
+
+  /* --- Notation row: wrap and shrink --- */
+  .notation-row {
+    flex-wrap: wrap;
+    justify-content: center;
+    padding: 6px 8px;
+    gap: 6px;
+  }
+  .notation-label {
+    font-size: 13px;
+  }
+  .notation-pill {
+    padding: 5px 10px;
+    font-size: 12px;
+  }
+
+  /* --- Playback card: stack rows --- */
+  .playback-card {
+    margin: 0 8px 8px;
+    padding: 10px;
+  }
+  .playback-header {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .playback-row {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .stepper {
+    gap: 6px;
+  }
+  .stepper .round-btn.sm {
+    width: 28px;
+    height: 28px;
+    font-size: 16px;
+  }
+  .stepper-value {
+    min-width: 70px;
+    font-size: 13px;
+  }
+
+  /* --- Viewer header: tighter --- */
+  .viewer-header {
+    padding: 8px 10px 6px;
+  }
+  .viewer-title {
+    font-size: 16px;
+  }
+  .viewer-artist {
+    font-size: 12px;
+  }
+
+  /* --- Viewer nav row at bottom --- */
+  .viewer-nav-row {
+    padding: 8px;
+    gap: 10px;
+  }
+  .viewer-nav-row .btn-primary {
+    padding: 10px 14px;
+    font-size: 13px;
+  }
+  .nav-counter {
+    font-size: 13px;
+  }
+
+  /* --- Song library cards tighter --- */
+  .song-card {
+    padding: 10px 12px;
+    gap: 8px;
+  }
+  .song-title {
+    font-size: 14px;
+  }
+
+  /* --- Add / Edit song form --- */
+  .meta-row {
+    flex-direction: column;
+    gap: 8px;
+  }
+  .add-song-content {
+    padding: 12px;
+    gap: 10px;
+  }
+  .tab-row {
+    gap: 4px;
+  }
+  .tab-btn {
+    padding: 8px 4px;
+    font-size: 12px;
+  }
+
+  /* --- Settings rows --- */
+  .settings-row {
+    padding: 10px 12px;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .settings-section {
+    padding: 12px;
+  }
+  .settings-section-title {
+    font-size: 16px;
+  }
+
+  /* --- Setlist screen --- */
+  .add-row {
+    padding: 8px 12px;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  .add-row .input-field {
+    min-width: 0;
+    flex: 1;
+  }
+
+  /* --- Picker modal: almost full-screen on mobile --- */
+  .picker-overlay {
+    padding: 8px;
+  }
+  .picker-modal {
+    max-width: 100%;
+    max-height: 85vh;
+  }
+
+  /* --- FAB: move down for thumb reach --- */
+  .fab {
+    bottom: 72px;
+    right: 14px;
+    width: 50px;
+    height: 50px;
+    font-size: 28px;
+  }
+
+  /* --- General button sizes --- */
+  .round-btn {
+    width: 38px;
+    height: 38px;
+    font-size: 20px;
+  }
+  .round-btn.sm {
+    width: 30px;
+    height: 30px;
+    font-size: 16px;
+  }
+
+  /* --- Lyrics container tighter padding --- */
+  .lyrics-container {
+    padding: 10px;
+    font-size: 14px;
+  }
+
+  /* --- Chord line edit buttons --- */
+  .line-toggle-btn {
+    width: 24px;
+    height: 24px;
+    font-size: 12px;
+  }
+
+  /* --- Login card responsive --- */
+  .login-card {
+    padding: 24px 18px;
+  }
+  .login-title {
+    font-size: 22px;
+  }
+  .login-subtitle {
+    font-size: 14px;
+  }
+
+  /* --- Screen header --- */
+  .screen-header {
+    padding: 8px 12px;
+    gap: 8px;
+  }
+  .screen-title {
+    font-size: 18px;
+  }
+
+  /* --- Header --- */
+  .app-header {
+    padding: 8px 10px;
+  }
+  .header-logo-img {
+    height: 28px;
+  }
+  .header-title {
+    font-size: 15px;
+  }
+
+  /* --- Tab bar --- */
+  .tab-item {
+    padding: 6px 0;
+    font-size: 10px;
+  }
+  .tab-icon {
+    font-size: 18px;
+  }
+
+  /* --- Modification history --- */
+  .mod-history {
+    padding: 8px;
+  }
+  .mod-history-item {
+    font-size: 11px;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+}
+
+/* ============================================================
+   VERY SMALL SCREENS — max-width: 360px
+   ============================================================ */
+@media (max-width: 360px) {
+  .toolbar {
+    padding: 4px 6px;
+  }
+  .transpose-row .round-btn {
+    width: 32px;
+    height: 32px;
+    font-size: 16px;
+  }
+  .toolbar-speed-value {
+    min-width: 36px;
+    font-size: 11px;
+  }
+  .toolbar-btn {
+    padding: 5px 8px;
+    font-size: 13px;
+  }
+  .viewer-title {
+    font-size: 14px;
+  }
+  .song-title {
+    font-size: 13px;
+  }
+  .lyrics-container {
+    padding: 8px;
+    font-size: 13px;
+  }
+  .chord-line {
+    font-size: 12px;
+  }
+}
