@@ -118,7 +118,10 @@ const AddSongScreen = ({ navigation }: any) => {
       setSongs([...songs, newSong]);
       setCloudSyncing(true);
       try {
-        await pushToCloud();
+        // Upload the new song directly instead of full batch push
+        if (uid) {
+          await uploadSingleSong(uid, newSong);
+        }
         showAlert('Success', `"${newSong.title}" added and synced to cloud!`);
       } catch {
         showAlert('Partial Success', `"${newSong.title}" added locally but cloud sync failed.`);
