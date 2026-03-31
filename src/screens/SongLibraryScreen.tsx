@@ -21,6 +21,9 @@ const SongLibraryScreen = ({ navigation }: any) => {
         value={search}
         onChangeText={setSearch}
       />
+      <TouchableOpacity style={styles.addBtn} onPress={() => navigation.navigate('AddSong')}>
+        <Text style={styles.addBtnText}>+ Add Song</Text>
+      </TouchableOpacity>
       <FlatList
         data={filtered}
         keyExtractor={(item) => item.id}
@@ -43,7 +46,9 @@ const SongLibraryScreen = ({ navigation }: any) => {
 
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 16 },
-  search: { borderWidth: 1, borderRadius: 8, padding: 10, marginBottom: 12, fontSize: 16 },
+  search: { borderWidth: 1, borderRadius: 8, padding: 10, marginBottom: 8, fontSize: 16 },
+  addBtn: { backgroundColor: '#34C759', borderRadius: 8, paddingVertical: 10, alignItems: 'center', marginBottom: 12 },
+  addBtnText: { color: '#fff', fontSize: 16, fontWeight: '600' },
   row: { paddingVertical: 12, borderBottomWidth: 1, borderColor: '#ddd' },
   title: { fontSize: 18, fontWeight: '600' },
   artist: { fontSize: 14, marginTop: 2 },

@@ -16,3 +16,6 @@ android/local.properties
 .env.development
 .env.test
 .env.production
+
+dist/
+.expo/

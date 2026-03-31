@@ -1,16 +1,19 @@
 import { initializeApp, getApps } from 'firebase/app';
 import { getFirestore } from 'firebase/firestore';
+import { getAuth } from 'firebase/auth';
 
 const firebaseConfig = {
-  apiKey: process.env.FIREBASE_API_KEY ?? 'YOUR_API_KEY',
-  authDomain: process.env.FIREBASE_AUTH_DOMAIN ?? 'YOUR_AUTH_DOMAIN',
-  projectId: process.env.FIREBASE_PROJECT_ID ?? 'YOUR_PROJECT_ID',
-  storageBucket: process.env.FIREBASE_STORAGE_BUCKET ?? 'YOUR_STORAGE_BUCKET',
-  messagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID ?? 'YOUR_MESSAGING_SENDER_ID',
-  appId: process.env.FIREBASE_APP_ID ?? 'YOUR_APP_ID',
+  apiKey: "AIzaSyA4r6MgsiRsoKiwpjx9z8IQjxauJeCh0mM",
+  authDomain: "music-abcf.firebaseapp.com",
+  projectId: "music-abcf",
+  storageBucket: "music-abcf.firebasestorage.app",
+  messagingSenderId: "697114617955",
+  appId: "1:697114617955:web:5b75504316f079ce147056",
+  measurementId: "G-QNB7NTN581",
 };
 
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
 const db = getFirestore(app);
+const auth = getAuth(app);
 
-export { app, db };
+export { app, db, auth };
