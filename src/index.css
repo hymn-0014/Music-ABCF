@@ -163,9 +163,10 @@ a { color: #4FC3F7; text-decoration: none; }
 }
 .login-logos {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
-  gap: 12px;
+  justify-content: center;
+  gap: 16px;
   margin-bottom: 16px;
 }
 .login-logo-mt {
@@ -592,6 +593,22 @@ a { color: #4FC3F7; text-decoration: none; }
   font-weight: 600;
   cursor: pointer;
   transition: background 0.15s;
+}
+.toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.toolbar-speed {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.toolbar-speed-value {
+  color: #FFFFFF;
+  min-width: 52px;
+  text-align: center;
+  font-size: 13px;
 }
 .toolbar-btn:hover { background: #333; }
 .toolbar-btn.active {

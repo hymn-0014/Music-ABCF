@@ -69,12 +69,25 @@ const SongChordViewer: React.FC<SongChordViewerProps> = ({ song }) => {
             onAccidentalChange={setAccidental}
           />
         </div>
-        <button
-          className={`toolbar-btn ${showPlayback ? 'active' : ''}`}
-          onClick={() => setShowPlayback(!showPlayback)}
-        >
-          ▶
-        </button>
+        <div className="toolbar-right">
+          <div className="toolbar-speed">
+            <button className="round-btn sm" onClick={() => setAutoScrollSpeed(autoScrollSpeed - 5)}>-</button>
+            <span className="toolbar-speed-value">{autoScrollSpeed}px/s</span>
+            <button className="round-btn sm" onClick={() => setAutoScrollSpeed(autoScrollSpeed + 5)}>+</button>
+            <button
+              className={`toggle-pill sm ${autoScrollEnabled ? 'active' : ''}`}
+              onClick={() => setAutoScrollEnabled(!autoScrollEnabled)}
+            >
+              {autoScrollEnabled ? 'Stop' : 'Scroll'}
+            </button>
+          </div>
+          <button
+            className={`toolbar-btn ${showPlayback ? 'active' : ''}`}
+            onClick={() => setShowPlayback(!showPlayback)}
+          >
+            ▶
+          </button>
+        </div>
       </div>
       <ChordDisplay
         notation={notation}

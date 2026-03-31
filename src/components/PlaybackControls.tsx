@@ -52,15 +52,6 @@ const PlaybackControls: React.FC<PlaybackControlsProps> = ({
         {autoScrollEnabled ? 'Stop' : 'Start'}
       </button>
     </div>
-
-    <div className="playback-row">
-      <span className="playback-label">Speed</span>
-      <div className="stepper">
-        <button className="round-btn sm" onClick={() => onAutoScrollSpeedChange(autoScrollSpeed - 5)}>-</button>
-        <span className="stepper-value">{autoScrollSpeed}px/s</span>
-        <button className="round-btn sm" onClick={() => onAutoScrollSpeedChange(autoScrollSpeed + 5)}>+</button>
-      </div>
-    </div>
   </div>
 );
 
