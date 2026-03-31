@@ -30,7 +30,9 @@ const AddSongScreen = ({ navigation }: any) => {
   const [loading, setLoading] = useState(false);
   const [cloudSyncing, setCloudSyncing] = useState(false);
   const [status, setStatus] = useState('');
-  const [activeTab, setActiveTab] = useState<'text' | 'url'>('text');
+  const [activeTab, setActiveTab] = useState<'text' | 'url' | 'file'>('text');
+  const [dragActive, setDragActive] = useState(false);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   const parsedTempo = Math.min(240, Math.max(40, Number.parseInt(tempo, 10) || 90));
 
@@ -95,6 +97,80 @@ const AddSongScreen = ({ navigation }: any) => {
     navigation.goBack();
   };
 
+  const handleFileSelect = async (file: File) => {
+    if (!file) return;
+    if (!file.type.includes('text') && !file.name.endsWith('.txt')) {
+      setStatus('Please select a text file (.txt or similar).');
+      return;
+    }
+    setLoading(true);
+    setStatus('Reading file…');
+    try {
+      const text = await file.text();
+      if (!text.trim()) {
+        setStatus('File is empty.');
+        return;
+      }
+      const result = parseChordsFromText(text, title || file.name.replace(/\.[^/.]+$/, ''), artist);
+      if (!result || result.lines.length === 0) {
+        setStatus('Could not parse chords from file. Format should be alternating chord/lyric lines:\n\nG   C   G\nAmazing grace how sweet');
+        return;
+      }
+      const newSong = {
+        ...result,
+        id: `song-${Date.now()}`,
+        title: title || result.title,
+        artist: artist || result.artist,
+        tempo: parsedTempo,
+      };
+      setSongs([...songs, newSong]);
+      setCloudSyncing(true);
+      try {
+        if (uid) {
+          await uploadSingleSong(uid, newSong);
+        }
+        showAlert('Success', `"${newSong.title}" added and synced to cloud!`);
+      } catch {
+        showAlert('Partial Success', `"${newSong.title}" added locally but cloud sync failed.`);
+      } finally {
+        setCloudSyncing(false);
+      }
+      navigation.goBack();
+    } catch (err) {
+      console.error('File read error:', err);
+      setStatus('Could not read file. Make sure it is a valid text file.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDrag = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === 'dragenter' || e.type === 'dragover') {
+      setDragActive(true);
+    } else if (e.type === 'dragleave') {
+      setDragActive(false);
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+    const files = e.dataTransfer?.files;
+    if (files && files.length > 0) {
+      handleFileSelect(files[0]);
+    }
+  };
+
+  const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files && files.length > 0) {
+      handleFileSelect(files[0]);
+    }
+  };
+
   const handleFetchFromUrl = async () => {
     if (!url.trim()) {
       setStatus('Enter a URL to a chord page.');
@@ -105,7 +181,7 @@ const AddSongScreen = ({ navigation }: any) => {
     try {
       const result = await fetchChordsFromUrl(url.trim());
       if (!result || result.lines.length === 0) {
-        setStatus('Could not extract chords from that URL.\n\nTry copying the chord text from the page and using the Paste tab instead.');
+        setStatus('Could not extract chords from that URL.\n\n💡 TIP: Copy the chord text from the page and paste it in the "Paste Text" tab instead. The URL method works best with Ultimate Guitar, Chordie, and similar sites.');
         return;
       }
       const newSong = {
@@ -129,8 +205,9 @@ const AddSongScreen = ({ navigation }: any) => {
         setCloudSyncing(false);
       }
       navigation.goBack();
-    } catch {
-      setStatus('Failed to fetch URL. Check your connection and try again.');
+    } catch (err) {
+      console.error('URL fetch error:', err);
+      setStatus('Network/CORS error. Try again or use the "Paste Text" tab instead. (Check browser DevTools console for details.)');
     } finally {
       setLoading(false);
     }
@@ -179,6 +256,12 @@ const AddSongScreen = ({ navigation }: any) => {
           onPress={() => { setActiveTab('url'); setStatus(''); }}
         >
           <Text style={[styles.tabText, activeTab === 'url' && styles.tabTextActive]}>From URL</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.tab, activeTab === 'file' && styles.tabActive]}
+          onPress={() => { setActiveTab('file'); setStatus(''); }}
+        >
+          <Text style={[styles.tabText, activeTab === 'file' && styles.tabTextActive]}>Drag File</Text>
         </TouchableOpacity>
       </View>
 
@@ -231,6 +314,44 @@ const AddSongScreen = ({ navigation }: any) => {
               </View>
             ) : (
               <Text style={styles.btnText}>Import from URL</Text>
+                  {activeTab === 'file' && (
+                    <View>
+                      <Text style={styles.hint}>Drag & drop a text file or click below to upload</Text>
+                      <View
+                        style={[
+                          styles.dropZone,
+                          dragActive && styles.dropZoneActive,
+                        ]}
+                        onDragEnter={handleDrag}
+                        onDragLeave={handleDrag}
+                        onDragOver={handleDrag}
+                        onDrop={handleDrop}
+                      >
+                        <Text style={styles.dropZoneText}>📄 Drag file here or click to select</Text>
+                      </View>
+                      <TouchableOpacity
+                        style={[styles.btn, { backgroundColor: '#FF9800', marginTop: 12 }]}
+                        onPress={() => fileInputRef.current?.click()}
+                        disabled={loading}
+                      >
+                        {loading ? (
+                          <View style={styles.loadingRow}>
+                            <ActivityIndicator color="#121212" size="small" />
+                            <Text style={[styles.btnText, { marginLeft: 8 }]}>Reading…</Text>
+                          </View>
+                        ) : (
+                          <Text style={styles.btnText}>📁 Choose File</Text>
+                        )}
+                      </TouchableOpacity>
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept=".txt,.md"
+                        style={{ display: 'none' }}
+                        onChange={handleFileInputChange}
+                      />
+                    </View>
+                  )}
             )}
           </TouchableOpacity>
         </View>
@@ -280,6 +401,27 @@ const styles = StyleSheet.create({
   },
   btnText: { color: '#121212', fontSize: 17, fontWeight: '700' },
   loadingRow: { flexDirection: 'row', alignItems: 'center' },
+    dropZone: {
+      borderWidth: 2,
+      borderColor: '#444',
+      borderStyle: 'dashed',
+      borderRadius: 10,
+      padding: 40,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: 12,
+      backgroundColor: '#1E1E1E',
+    },
+    dropZoneActive: {
+      borderColor: '#4FC3F7',
+      backgroundColor: '#1A3A4A',
+    },
+    dropZoneText: {
+      fontSize: 16,
+      color: '#888',
+      textAlign: 'center',
+      lineHeight: 24,
+    },
   statusBox: {
     marginTop: 16, backgroundColor: '#2A2A2A', borderRadius: 10,
     padding: 14, borderLeftWidth: 3, borderLeftColor: '#FF9800',

@@ -2,8 +2,9 @@ import { ChordLyricLine } from '../types';
 import { parseChordSheet } from '../utils/chordParser';
 
 const CORS_PROXIES = [
-  'https://corsproxy.io/?',
   'https://api.allorigins.win/raw?url=',
+  'https://corsproxy.io/?',
+  'https://cors-anywhere.herokuapp.com/',
 ];
 
 /**
