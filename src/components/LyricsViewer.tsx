@@ -10,6 +10,8 @@ interface LyricsViewerProps {
   accidental: AccidentalPreference;
   autoScrollEnabled: boolean;
   autoScrollSpeed: number;
+  editMode?: boolean;
+  onLinesChange?: (newLines: ChordLyricLine[]) => void;
 }
 
 const CHORD_COLOR = '#4FC3F7';
@@ -38,7 +40,7 @@ function renderColoredChordLine(chordLine: string): React.ReactNode[] {
 }
 
 const LyricsViewer: React.FC<LyricsViewerProps> = ({
-  lines, transpose, songKey, notation, accidental, autoScrollEnabled, autoScrollSpeed,
+  lines, transpose, songKey, notation, accidental, autoScrollEnabled, autoScrollSpeed, editMode, onLinesChange,
 }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const isAutoScrollingRef = useRef(false);
@@ -63,6 +65,39 @@ const LyricsViewer: React.FC<LyricsViewerProps> = ({
     if (scrollRef.current) scrollRef.current.scrollTop = 0;
   }, [lines.length]);
 
+  // Mark a lyric-only line as a chord line (merge with next lyric line if possible)
+  const markAsChords = (index: number) => {
+    if (!onLinesChange) return;
+    const newLines = [...lines];
+    const current = newLines[index];
+    if (!current.lyrics || current.chords) return; // only for lyric-only lines
+    const text = current.lyrics;
+    const next = newLines[index + 1];
+    if (next && !next.chords && next.lyrics && !SECTION_PATTERN.test(next.lyrics.trim())) {
+      // Merge: current lyrics → chords, next lyrics stay
+      newLines.splice(index, 2, { chords: text, lyrics: next.lyrics });
+    } else {
+      // Convert to chord-only line
+      newLines[index] = { chords: text, lyrics: '' };
+    }
+    onLinesChange(newLines);
+  };
+
+  // Mark a chord line back as a lyric line (split if it had lyrics)
+  const markAsLyrics = (index: number) => {
+    if (!onLinesChange) return;
+    const newLines = [...lines];
+    const current = newLines[index];
+    if (!current.chords) return;
+    if (current.lyrics) {
+      // Split: chords become a lyric line, then existing lyrics
+      newLines.splice(index, 1, { chords: '', lyrics: current.chords }, { chords: '', lyrics: current.lyrics });
+    } else {
+      newLines[index] = { chords: '', lyrics: current.chords };
+    }
+    onLinesChange(newLines);
+  };
+
   return (
     <div className="lyrics-container" ref={scrollRef}>
       {lines.map((line, i) => {
@@ -71,16 +106,27 @@ const LyricsViewer: React.FC<LyricsViewerProps> = ({
           displayChords = transposeLine(displayChords, transpose, accidental);
           if (notation === 'nashville') displayChords = nashvilleLineFromChords(displayChords, songKey);
         }
+        const isSection = line.lyrics && SECTION_PATTERN.test(line.lyrics.trim());
         return (
-          <div key={i} className="line-block">
+          <div key={i} className={`line-block${editMode ? ' line-block-edit' : ''}`}>
             {displayChords ? (
-              <div className="chord-line">{renderColoredChordLine(displayChords)}</div>
+              <div className="chord-line-row">
+                <div className="chord-line">{renderColoredChordLine(displayChords)}</div>
+                {editMode && (
+                  <button className="line-toggle-btn chord-to-lyric" title="Mark as lyrics" onClick={() => markAsLyrics(i)}>T</button>
+                )}
+              </div>
             ) : null}
             {line.lyrics ? (
-              SECTION_PATTERN.test(line.lyrics.trim()) ? (
+              isSection ? (
                 <div className="section-label">{line.lyrics}</div>
               ) : (
-                <div className="lyric-line">{line.lyrics}</div>
+                <div className="lyric-line-row">
+                  <div className="lyric-line">{line.lyrics}</div>
+                  {editMode && !line.chords && (
+                    <button className="line-toggle-btn lyric-to-chord" title="Mark as chords" onClick={() => markAsChords(i)}>♫</button>
+                  )}
+                </div>
               )
             ) : null}
           </div>

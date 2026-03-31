@@ -652,6 +652,61 @@ a { color: #4FC3F7; text-decoration: none; }
   margin-bottom: 4px;
 }
 
+/* ===== Line edit mode ===== */
+.line-block-edit {
+  border-left: 2px solid transparent;
+  padding-left: 4px;
+  border-radius: 4px;
+  transition: background 0.15s;
+}
+.line-block-edit:hover {
+  background: rgba(255,255,255,0.04);
+}
+.chord-line-row,
+.lyric-line-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.chord-line-row .chord-line,
+.lyric-line-row .lyric-line {
+  flex: 1;
+  min-width: 0;
+}
+.line-toggle-btn {
+  flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  font-size: 13px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1.5px solid;
+  cursor: pointer;
+  transition: transform 0.15s, background 0.15s;
+}
+.line-toggle-btn:hover {
+  transform: scale(1.15);
+}
+.lyric-to-chord {
+  color: #4FC3F7;
+  border-color: #4FC3F7;
+  background: rgba(79,195,247,0.12);
+}
+.lyric-to-chord:hover {
+  background: rgba(79,195,247,0.25);
+}
+.chord-to-lyric {
+  color: #E0E0E0;
+  border-color: #E0E0E0;
+  background: rgba(224,224,224,0.10);
+}
+.chord-to-lyric:hover {
+  background: rgba(224,224,224,0.2);
+}
+
 /* ===== Transpose control ===== */
 .transpose-row {
   display: flex;

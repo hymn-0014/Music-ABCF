@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Song } from '../types';
+import { Song, ChordLyricLine } from '../types';
 import LyricsViewer from './LyricsViewer';
 import TransposeControl from './TransposeControl';
 import ChordDisplay from './ChordDisplay';
@@ -25,7 +25,9 @@ const SongChordViewer: React.FC<SongChordViewerProps> = ({ song }) => {
   const setMetronomeEnabled = useAppStore((state) => state.setMetronomeEnabled);
   const setAutoScrollEnabled = useAppStore((state) => state.setAutoScrollEnabled);
   const setAutoScrollSpeed = useAppStore((state) => state.setAutoScrollSpeed);
+  const updateSong = useAppStore((state) => state.updateSong);
   const [showPlayback, setShowPlayback] = useState(false);
+  const [editMode, setEditMode] = useState(false);
   const audioContextRef = useRef<AudioContext | null>(null);
 
   useEffect(() => {
@@ -87,6 +89,13 @@ const SongChordViewer: React.FC<SongChordViewerProps> = ({ song }) => {
           >
             ▶
           </button>
+          <button
+            className={`toolbar-btn ${editMode ? 'active' : ''}`}
+            onClick={() => setEditMode(!editMode)}
+            title="Toggle line edit mode"
+          >
+            ♫
+          </button>
         </div>
       </div>
       <ChordDisplay
@@ -113,6 +122,8 @@ const SongChordViewer: React.FC<SongChordViewerProps> = ({ song }) => {
         accidental={accidental}
         autoScrollEnabled={autoScrollEnabled}
         autoScrollSpeed={autoScrollSpeed}
+        editMode={editMode}
+        onLinesChange={(newLines: ChordLyricLine[]) => updateSong(song.id, { lines: newLines })}
       />
     </div>
   );
