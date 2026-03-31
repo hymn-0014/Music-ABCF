@@ -113,7 +113,7 @@ function extractChordsFromHtml(html: string): {
     const chordLineCount = bodyText.split('\n').filter(line => {
       const tokens = line.trim().split(/\s+/);
       return tokens.length > 0 && tokens.length <= 20 &&
-        tokens.every(t => /^[A-G][#b]?[a-z0-9/()]*$/.test(t));
+        tokens.every(t => /^[A-G][#b]?[a-z0-9()]*(?:\/[A-G][#b]?)?$/.test(t));
     }).length;
     if (chordLineCount >= 2) {
       rawText = bodyText;

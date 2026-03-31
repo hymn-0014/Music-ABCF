@@ -6,7 +6,7 @@ import { ChordLyricLine } from '../types';
  * and lyric lines.  A chord line is detected when every non-whitespace
  * token matches a chord pattern.
  */
-const CHORD_RE = /^[A-G][#b]?[a-z0-9/]*$/;
+const CHORD_RE = /^[A-G][#b]?[a-z0-9]*(?:\/[A-G][#b]?)?$/;
 
 function isChordLine(line: string): boolean {
   if (line.trim() === '') return false;

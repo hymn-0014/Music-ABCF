@@ -17,6 +17,13 @@ function noteIndex(note: string): number {
 
 export function transposeChord(chord: string, semitones: number, pref: AccidentalPreference = 'sharp'): string {
   const notes = pref === 'sharp' ? SHARP_NOTES : FLAT_NOTES;
+  // Handle slash chords: transpose both root and bass note
+  const slashIdx = chord.indexOf('/');
+  if (slashIdx > 0) {
+    const rootPart = chord.substring(0, slashIdx);
+    const bassPart = chord.substring(slashIdx + 1);
+    return transposeChord(rootPart, semitones, pref) + '/' + transposeChord(bassPart, semitones, pref);
+  }
   const match = chord.match(/^([A-G][#b]?)(.*)/);
   if (!match) return chord;
   const [, root, suffix] = match;
@@ -27,10 +34,17 @@ export function transposeChord(chord: string, semitones: number, pref: Accidenta
 }
 
 export function transposeLine(chordLine: string, semitones: number, pref: AccidentalPreference = 'sharp'): string {
-  return chordLine.replace(/[A-G][#b]?[a-z0-9]*/g, (match) => transposeChord(match, semitones, pref));
+  return chordLine.replace(/[A-G][#b]?[a-z0-9]*(?:\/[A-G][#b]?)?/g, (match) => transposeChord(match, semitones, pref));
 }
 
 export function chordToNashville(chord: string, keyRoot: string): string {
+  // Handle slash chords: convert both root and bass note
+  const slashIdx = chord.indexOf('/');
+  if (slashIdx > 0) {
+    const rootPart = chord.substring(0, slashIdx);
+    const bassPart = chord.substring(slashIdx + 1);
+    return chordToNashville(rootPart, keyRoot) + '/' + chordToNashville(bassPart, keyRoot);
+  }
   const match = chord.match(/^([A-G][#b]?)(.*)/);
   if (!match) return chord;
   const [, root, suffix] = match;
@@ -42,5 +56,5 @@ export function chordToNashville(chord: string, keyRoot: string): string {
 }
 
 export function nashvilleLineFromChords(chordLine: string, keyRoot: string): string {
-  return chordLine.replace(/[A-G][#b]?[a-z0-9]*/g, (match) => chordToNashville(match, keyRoot));
+  return chordLine.replace(/[A-G][#b]?[a-z0-9]*(?:\/[A-G][#b]?)?/g, (match) => chordToNashville(match, keyRoot));
 }
