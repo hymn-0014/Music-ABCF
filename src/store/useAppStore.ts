@@ -118,12 +118,13 @@ const useAppStore = create<AppState>((set, get) => ({
     }) });
   },
   deleteSong: (id) => {
-    const { songs, currentSongId, uid } = get();
+    const { songs, currentSongId } = get();
     set({
       songs: songs.filter((s) => s.id !== id),
       currentSongId: currentSongId === id ? null : currentSongId,
     });
-    if (uid) void deleteSongFromFirestore(uid, id).catch(e => console.error('Cloud delete failed:', e));
+    // In shared mode we do NOT auto-delete from cloud — the song may be used
+    // by other users' setlists. Cloud cleanup is done explicitly via sync.
   },
   setCurrentSongId: (id) => {
     const songTempo = get().songs.find((song) => song.id === id)?.tempo ?? 90;

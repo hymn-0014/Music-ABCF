@@ -2,74 +2,64 @@ import { collection, getDocs, writeBatch, doc, setDoc, deleteDoc } from 'firebas
 import { db } from '../config/firebase';
 import { Song, Setlist } from '../types';
 
-function userSongsCol(uid: string) {
-  return collection(db, 'users', uid, 'songs');
-}
+// ---- Shared (global) collections — all registered users read/write the same pool ----
+const sharedSongsCol = () => collection(db, 'songs');
+const sharedSetlistsCol = () => collection(db, 'setlists');
 
-function userSetlistsCol(uid: string) {
-  return collection(db, 'users', uid, 'setlists');
-}
-
-export async function syncSongsToFirestore(uid: string, songs: Song[]): Promise<void> {
-  const snap = await getDocs(userSongsCol(uid));
-  const localIds = new Set(songs.map((s) => s.id));
+/**
+ * Push local songs to the shared cloud collection.
+ * In shared mode we only upsert — we never delete songs that other users may own.
+ */
+export async function syncSongsToFirestore(_uid: string, songs: Song[]): Promise<void> {
   const batch = writeBatch(db);
-  // Delete cloud songs not present locally
-  for (const d of snap.docs) {
-    if (!localIds.has(d.id)) batch.delete(d.ref);
-  }
-  // Write all local songs
   for (const song of songs) {
-    batch.set(doc(db, 'users', uid, 'songs', song.id), song);
+    batch.set(doc(db, 'songs', song.id), song);
   }
   await batch.commit();
 }
 
-export async function fetchSongsFromFirestore(uid: string): Promise<Song[]> {
-  const snap = await getDocs(userSongsCol(uid));
+export async function fetchSongsFromFirestore(_uid: string): Promise<Song[]> {
+  const snap = await getDocs(sharedSongsCol());
   return snap.docs.map((d) => d.data() as Song);
 }
 
-export async function syncSetlistsToFirestore(uid: string, setlists: Setlist[]): Promise<void> {
-  const snap = await getDocs(userSetlistsCol(uid));
-  const localIds = new Set(setlists.map((sl) => sl.id));
+/**
+ * Push local setlists to the shared cloud collection.
+ * Upsert only — never delete setlists other users may own.
+ */
+export async function syncSetlistsToFirestore(_uid: string, setlists: Setlist[]): Promise<void> {
   const batch = writeBatch(db);
-  // Delete cloud setlists not present locally
-  for (const d of snap.docs) {
-    if (!localIds.has(d.id)) batch.delete(d.ref);
-  }
-  // Write all local setlists
   for (const sl of setlists) {
-    batch.set(doc(db, 'users', uid, 'setlists', sl.id), sl);
+    batch.set(doc(db, 'setlists', sl.id), sl);
   }
   await batch.commit();
 }
 
-export async function fetchSetlistsFromFirestore(uid: string): Promise<Setlist[]> {
-  const snap = await getDocs(userSetlistsCol(uid));
+export async function fetchSetlistsFromFirestore(_uid: string): Promise<Setlist[]> {
+  const snap = await getDocs(sharedSetlistsCol());
   return snap.docs.map((d) => d.data() as Setlist);
 }
 
-export async function uploadSingleSong(uid: string, song: Song): Promise<void> {
-  await setDoc(doc(db, 'users', uid, 'songs', song.id), song);
+export async function uploadSingleSong(_uid: string, song: Song): Promise<void> {
+  await setDoc(doc(db, 'songs', song.id), song);
 }
 
-export async function deleteSongFromFirestore(uid: string, songId: string): Promise<void> {
-  await deleteDoc(doc(db, 'users', uid, 'songs', songId));
+export async function deleteSongFromFirestore(_uid: string, songId: string): Promise<void> {
+  await deleteDoc(doc(db, 'songs', songId));
 }
 
-export async function uploadSingleSetlist(uid: string, setlist: Setlist): Promise<void> {
-  await setDoc(doc(db, 'users', uid, 'setlists', setlist.id), setlist);
+export async function uploadSingleSetlist(_uid: string, setlist: Setlist): Promise<void> {
+  await setDoc(doc(db, 'setlists', setlist.id), setlist);
 }
 
-export async function deleteSetlistFromFirestore(uid: string, setlistId: string): Promise<void> {
-  await deleteDoc(doc(db, 'users', uid, 'setlists', setlistId));
+export async function deleteSetlistFromFirestore(_uid: string, setlistId: string): Promise<void> {
+  await deleteDoc(doc(db, 'setlists', setlistId));
 }
 
-/** Fetch specific songs by their IDs */
-export async function fetchSongsByIds(uid: string, songIds: string[]): Promise<Song[]> {
+/** Fetch specific songs by their IDs from the shared collection */
+export async function fetchSongsByIds(_uid: string, songIds: string[]): Promise<Song[]> {
   if (songIds.length === 0) return [];
-  const snap = await getDocs(userSongsCol(uid));
+  const snap = await getDocs(sharedSongsCol());
   const idSet = new Set(songIds);
   return snap.docs.filter((d) => idSet.has(d.id)).map((d) => d.data() as Song);
 }
