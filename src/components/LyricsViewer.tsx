@@ -1,5 +1,4 @@
 import React, { useEffect, useRef } from 'react';
-import { View, Text, ScrollView, StyleSheet, Platform } from 'react-native';
 import { ChordLyricLine, NotationMode, AccidentalPreference } from '../types';
 import { transposeLine, nashvilleLineFromChords } from '../utils/chordTranspose';
 
@@ -13,164 +12,82 @@ interface LyricsViewerProps {
   autoScrollSpeed: number;
 }
 
+const CHORD_COLOR = '#4FC3F7';
+const SECTION_PATTERN = /^\[.*\]$/;
+const CHORD_PATTERN = /(?:[A-G][#b]?(?:maj|min|m|dim|aug|sus|add|M)?(?:\d+)?(?:(?:sus|add|aug|dim|maj|min|m|b|#)\d*)*(?:\([^)]*\))?(?:\/[A-G][#b]?)?|b?[1-7][#b]?(?:maj|min|m|dim|aug|sus|add|M)?(?:\d+)?(?:(?:sus|add|aug|dim|maj|min|m|b|#)\d*)*(?:\([^)]*\))?(?:\/b?[1-7][#b]?)?)/g;
+
+function renderColoredChordLine(chordLine: string): React.ReactNode[] {
+  const elements: React.ReactNode[] = [];
+  let lastIndex = 0;
+  let match;
+  CHORD_PATTERN.lastIndex = 0;
+
+  while ((match = CHORD_PATTERN.exec(chordLine)) !== null) {
+    if (match.index > lastIndex) {
+      elements.push(<span key={`s-${lastIndex}`} className="chord-space">{chordLine.substring(lastIndex, match.index)}</span>);
+    }
+    elements.push(<span key={`c-${match.index}`} style={{ color: CHORD_COLOR }}>{match[0]}</span>);
+    lastIndex = match.index + match[0].length;
+  }
+
+  if (lastIndex < chordLine.length) {
+    elements.push(<span key="s-end" className="chord-space">{chordLine.substring(lastIndex)}</span>);
+  }
+
+  return elements;
+}
+
 const LyricsViewer: React.FC<LyricsViewerProps> = ({
   lines, transpose, songKey, notation, accidental, autoScrollEnabled, autoScrollSpeed,
 }) => {
-  const CHORD_COLOR = '#4FC3F7';
-  const SECTION_COLOR = '#66BB6A';
-  const SECTION_PATTERN = /^\[.*\]$/;
-  // Comprehensive chord pattern: handles standard chords (A-G), slash chords, compound suffixes, and Nashville numbers (including flats like b7)
-  const CHORD_PATTERN = /(?:[A-G][#b]?(?:maj|min|m|dim|aug|sus|add|M)?(?:\d+)?(?:(?:sus|add|aug|dim|maj|min|m|b|#)\d*)*(?:\([^)]*\))?(?:\/[A-G][#b]?)?|b?[1-7][#b]?(?:maj|min|m|dim|aug|sus|add|M)?(?:\d+)?(?:(?:sus|add|aug|dim|maj|min|m|b|#)\d*)*(?:\([^)]*\))?(?:\/b?[1-7][#b]?)?)/g;
-
-  // Parse and render colored chords preserving original spacing
-  const renderColoredChormLine = (chordLine: string): React.ReactNode[] => {
-    const elements: React.ReactNode[] = [];
-    let lastIndex = 0;
-    let match;
-    CHORD_PATTERN.lastIndex = 0;
-    
-    // eslint-disable-next-line no-cond-assign
-    while ((match = CHORD_PATTERN.exec(chordLine)) !== null) {
-      // Add spaces/text before the chord
-      if (match.index > lastIndex) {
-        elements.push(
-          <Text key={`space-${lastIndex}`} style={styles.chordLine}>
-            {chordLine.substring(lastIndex, match.index)}
-          </Text>
-        );
-      }
-      
-      // Add the colored chord
-      const chord = match[0];
-      elements.push(
-        <Text key={`chord-${match.index}`} style={[styles.chordLine, { color: CHORD_COLOR }]}>
-          {chord}
-        </Text>
-      );
-      
-      lastIndex = match.index + chord.length;
-    }
-    
-    // Add any remaining text after the last chord
-    if (lastIndex < chordLine.length) {
-      elements.push(
-        <Text key={`space-end`} style={styles.chordLine}>
-          {chordLine.substring(lastIndex)}
-        </Text>
-      );
-    }
-    
-    return elements.length > 0 ? elements : [];
-  };
-  const scrollRef = useRef<ScrollView>(null);
-  const scrollYRef = useRef(0);
-  const contentHeightRef = useRef(0);
-  const containerHeightRef = useRef(0);
+  const scrollRef = useRef<HTMLDivElement>(null);
   const isAutoScrollingRef = useRef(false);
 
   useEffect(() => {
-    if (!autoScrollEnabled) {
-      isAutoScrollingRef.current = false;
-      return undefined;
-    }
-
+    if (!autoScrollEnabled) { isAutoScrollingRef.current = false; return; }
     isAutoScrollingRef.current = true;
 
     const interval = setInterval(() => {
-      if (!isAutoScrollingRef.current) {
-        return;
-      }
-
-      const maxScroll = Math.max(0, contentHeightRef.current - containerHeightRef.current);
-      if (maxScroll <= 0) {
-        return;
-      }
-
-      const nextY = Math.min(maxScroll, scrollYRef.current + (autoScrollSpeed || 30) * 0.05);
-
-      scrollYRef.current = nextY;
-      scrollRef.current?.scrollTo({ y: nextY, animated: false });
+      const el = scrollRef.current;
+      if (!isAutoScrollingRef.current || !el) return;
+      const maxScroll = el.scrollHeight - el.clientHeight;
+      if (maxScroll <= 0) return;
+      el.scrollTop = Math.min(maxScroll, el.scrollTop + (autoScrollSpeed || 30) * 0.05);
     }, 50);
 
-    return () => {
-      clearInterval(interval);
-      isAutoScrollingRef.current = false;
-    };
+    return () => { clearInterval(interval); isAutoScrollingRef.current = false; };
   }, [autoScrollEnabled, autoScrollSpeed]);
 
-  // Only reset scroll on actual song change, not on transpose/notation changes
+  // Reset scroll on song change
   useEffect(() => {
-    scrollYRef.current = 0;
-    scrollRef.current?.scrollTo({ y: 0, animated: false });
+    if (scrollRef.current) scrollRef.current.scrollTop = 0;
   }, [lines.length]);
 
   return (
-    <ScrollView
-      ref={scrollRef}
-      style={[styles.container, Platform.OS === 'web' ? { overflow: 'scroll' as any, maxHeight: '100%' as any } : undefined]}
-      contentContainerStyle={styles.contentContainer}
-      scrollEnabled={true}
-      showsVerticalScrollIndicator={true}
-      testID="lyrics-scroll"
-      {...(Platform.OS === 'web' ? { dataSet: { testid: 'lyrics-scroll' } } as any : {})}
-      onLayout={(event) => {
-        containerHeightRef.current = event.nativeEvent.layout.height;
-      }}
-      onContentSizeChange={(_, height) => {
-        contentHeightRef.current = height;
-      }}
-      onScroll={(event) => {
-        scrollYRef.current = event.nativeEvent.contentOffset.y;
-      }}
-      scrollEventThrottle={16}
-    >
+    <div className="lyrics-container" ref={scrollRef}>
       {lines.map((line, i) => {
         let displayChords = line.chords;
         if (displayChords) {
           displayChords = transposeLine(displayChords, transpose, accidental);
-          if (notation === 'nashville') {
-            displayChords = nashvilleLineFromChords(displayChords, songKey);
-          }
+          if (notation === 'nashville') displayChords = nashvilleLineFromChords(displayChords, songKey);
         }
         return (
-          <View key={i} style={styles.lineBlock}>
+          <div key={i} className="line-block">
             {displayChords ? (
-              <Text style={styles.chordLineWrapper}>
-                {renderColoredChormLine(displayChords)}
-              </Text>
+              <div className="chord-line">{renderColoredChordLine(displayChords)}</div>
             ) : null}
             {line.lyrics ? (
               SECTION_PATTERN.test(line.lyrics.trim()) ? (
-                <Text style={styles.sectionLabel}>{line.lyrics}</Text>
+                <div className="section-label">{line.lyrics}</div>
               ) : (
-                <Text style={styles.lyricLine}>{line.lyrics}</Text>
+                <div className="lyric-line">{line.lyrics}</div>
               )
             ) : null}
-          </View>
+          </div>
         );
       })}
-    </ScrollView>
+    </div>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: 40,
-    backgroundColor: '#1A1A1A',
-    minHeight: 0,
-    ...(Platform.OS === 'web' ? { overflow: 'scroll' as any } : {}),
-  },
-  contentContainer: {
-    paddingBottom: 60,
-  },
-  lineBlock: { marginBottom: 6 },
-  chordLineWrapper: { fontFamily: "'Roboto Mono', monospace" as any, fontSize: 18, fontWeight: '700', color: '#4FC3F7', letterSpacing: 0.5 },
-  chordLine: { fontFamily: "'Roboto Mono', monospace" as any, fontSize: 18, fontWeight: '700', color: '#4FC3F7', letterSpacing: 0.5 },
-  sectionLabel: { fontFamily: "'Roboto Mono', monospace" as any, fontSize: 18, fontWeight: '700', color: '#66BB6A', marginTop: 10, marginBottom: 2 },
-  lyricLine: { fontFamily: "'Roboto Mono', monospace" as any, fontSize: 18, color: '#E0E0E0', lineHeight: 26 },
-});
 
 export default LyricsViewer;

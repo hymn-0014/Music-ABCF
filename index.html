@@ -3,14 +3,11 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Music-ABCF</title>
-  <meta http-equiv="refresh" content="0; url=./dist/index.html" />
+  <title>Music ABCF</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22><text y=%2224%22 font-size=%2224%22>♪</text></svg>">
 </head>
 <body>
-  <p>Redirecting to the app...</p>
-  <script>
-    const next = './dist/index.html' + window.location.search + window.location.hash;
-    window.location.replace(next);
-  </script>
+  <div id="root"></div>
+  <script type="module" src="/src/main.tsx"></script>
 </body>
 </html>

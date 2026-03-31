@@ -8,7 +8,6 @@ import {
   User,
 } from 'firebase/auth';
 import { FirebaseError } from 'firebase/app';
-import { Platform } from 'react-native';
 import { auth } from '../config/firebase';
 
 export function onAuthChange(callback: (user: User | null) => void) {
@@ -26,8 +25,8 @@ export async function signIn(email: string, password: string): Promise<User> {
 }
 
 function ensureWebPopupSupport() {
-  if (Platform.OS !== 'web' || typeof window === 'undefined') {
-    throw new Error('Google and Apple sign-in are currently available on the web version only.');
+  if (typeof window === 'undefined') {
+    throw new Error('Google sign-in requires a browser environment.');
   }
 }
 

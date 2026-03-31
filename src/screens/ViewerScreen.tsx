@@ -1,9 +1,10 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Platform } from 'react-native';
+import { useNavigate } from 'react-router-dom';
 import useAppStore from '../store/useAppStore';
 import SongChordViewer from '../components/SongChordViewer';
 
-const ViewerScreen = ({ navigation }: any) => {
+const ViewerScreen = () => {
+  const navigate = useNavigate();
   const songs = useAppStore((s) => s.songs);
   const currentSongId = useAppStore((s) => s.currentSongId);
   const setCurrentSongId = useAppStore((s) => s.setCurrentSongId);
@@ -26,109 +27,51 @@ const ViewerScreen = ({ navigation }: any) => {
 
   if (!song) {
     return (
-      <View style={styles.center}>
-        <Text style={styles.emptyIcon}>🎵</Text>
-        <Text style={styles.emptyText}>No song selected</Text>
-        <TouchableOpacity style={styles.goBackBtn} onPress={() => navigation.goBack()}>
-          <Text style={styles.goBackText}>Go to Songs</Text>
-        </TouchableOpacity>
-      </View>
+      <div className="center-screen">
+        <span className="empty-icon">🎵</span>
+        <p className="empty-text">No song selected</p>
+        <button className="btn-primary" onClick={() => navigate('/')}>Go to Songs</button>
+      </div>
     );
   }
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <View style={styles.headerTop}>
-          <TouchableOpacity
-            style={styles.backBtn}
-            onPress={() => navigation.goBack()}
-          >
-            <Text style={styles.backBtnText}>←</Text>
-          </TouchableOpacity>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.title} numberOfLines={1}>{song.title}</Text>
-            <Text style={styles.artist}>{song.artist} · Key of {song.key}</Text>
-          </View>
-          <TouchableOpacity
-            style={styles.editBtn}
-            onPress={() => navigation.navigate('EditSong', { songId: song.id })}
-          >
-            <Text style={styles.editBtnText}>✏️</Text>
-          </TouchableOpacity>
-        </View>
+    <div className="viewer-layout">
+      <div className="viewer-header">
+        <div className="viewer-header-top">
+          <button className="back-btn" onClick={() => navigate('/')}>←</button>
+          <div className="viewer-header-info">
+            <div className="viewer-title">{song.title}</div>
+            <div className="viewer-artist">{song.artist} · Key of {song.key}</div>
+          </div>
+          <button className="icon-btn" onClick={() => navigate(`/edit-song/${song.id}`)}>✏️</button>
+        </div>
         {setlist && (
-          <Text style={styles.setlistInfo}>{setlist.name} ({currentIndex + 1}/{totalInSetlist})</Text>
+          <div className="viewer-setlist-info">{setlist.name} ({currentIndex + 1}/{totalInSetlist})</div>
         )}
-      </View>
+      </div>
       <SongChordViewer song={song} />
       {totalInSetlist > 1 && (
-        <View style={styles.navRow}>
-          <TouchableOpacity
-            style={[styles.navBtn, currentIndex <= 0 && styles.disabled]}
-            onPress={goPrev}
+        <div className="viewer-nav-row">
+          <button
+            className="btn-primary"
             disabled={currentIndex <= 0}
+            onClick={goPrev}
           >
-            <Text style={styles.navText}>← Prev</Text>
-          </TouchableOpacity>
-          <Text style={styles.navCounter}>{currentIndex + 1} / {totalInSetlist}</Text>
-          <TouchableOpacity
-            style={[styles.navBtn, currentIndex >= totalInSetlist - 1 && styles.disabled]}
-            onPress={goNext}
+            ← Prev
+          </button>
+          <span className="nav-counter">{currentIndex + 1} / {totalInSetlist}</span>
+          <button
+            className="btn-primary"
             disabled={currentIndex >= totalInSetlist - 1}
+            onClick={goNext}
           >
-            <Text style={styles.navText}>Next →</Text>
-          </TouchableOpacity>
-        </View>
+            Next →
+          </button>
+        </div>
       )}
-    </View>
+    </div>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#121212',
-    ...(Platform.OS === 'web' ? { height: '100vh' as any, display: 'flex' as any, flexDirection: 'column' as any, minHeight: 0 } : {}),
-  },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#121212' },
-  emptyIcon: { fontSize: 48, marginBottom: 12 },
-  emptyText: { fontSize: 18, color: '#FFFFFF', fontWeight: '600', marginBottom: 16 },
-  goBackBtn: { backgroundColor: '#4FC3F7', borderRadius: 10, paddingHorizontal: 24, paddingVertical: 12 },
-  goBackText: { color: '#121212', fontSize: 16, fontWeight: '600' },
-  header: {
-    paddingHorizontal: 12,
-    paddingTop: 10,
-    paddingBottom: 10,
-    backgroundColor: '#1E1E1E',
-    borderBottomWidth: 1,
-    borderBottomColor: '#2A2A2A',
-  },
-  headerTop: { flexDirection: 'row', alignItems: 'center' },
-  backBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#2A2A2A',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 10,
-  },
-  backBtnText: { color: '#4FC3F7', fontSize: 22, fontWeight: 'bold' },
-  editBtn: { padding: 8, marginLeft: 8 },
-  editBtnText: { fontSize: 20 },
-  title: { fontSize: 22, fontWeight: 'bold', color: '#FFFFFF' },
-  artist: { fontSize: 14, color: '#AAA', marginTop: 2 },
-  setlistInfo: { fontSize: 12, color: '#4FC3F7', marginTop: 4 },
-  navRow: {
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    paddingVertical: 12, paddingHorizontal: 16, borderTopWidth: 1, borderTopColor: '#2A2A2A',
-    backgroundColor: '#1E1E1E',
-  },
-  navBtn: { backgroundColor: '#4FC3F7', borderRadius: 8, paddingVertical: 10, paddingHorizontal: 20 },
-  navText: { color: '#121212', fontSize: 15, fontWeight: '600' },
-  navCounter: { color: '#AAA', fontSize: 14 },
-  disabled: { opacity: 0.3 },
-});
 
 export default ViewerScreen;

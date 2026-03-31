@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { View, Text, FlatList, TouchableOpacity, TextInput, StyleSheet } from 'react-native';
+import { useNavigate } from 'react-router-dom';
 import useAppStore from '../store/useAppStore';
 import SetlistManager from '../components/SetlistManager';
 
-const SetlistScreen = ({ navigation }: any) => {
+const SetlistScreen = () => {
+  const navigate = useNavigate();
   const songs = useAppStore((s) => s.songs);
   const setlists = useAppStore((s) => s.setlists);
   const setSetlists = useAppStore((s) => s.setSetlists);
@@ -27,12 +28,10 @@ const SetlistScreen = ({ navigation }: any) => {
 
   if (editing) {
     return (
-      <View style={styles.container}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => setEditingId(null)}>
-          <Text style={styles.backText}>← Back</Text>
-        </TouchableOpacity>
-        <Text style={styles.editTitle}>{editing.name}</Text>
-        <Text style={styles.editSubtitle}>{editing.songIds.length} songs in setlist</Text>
+      <div className="screen">
+        <button className="text-btn" onClick={() => setEditingId(null)}>← Back</button>
+        <h2 className="section-title" style={{ paddingLeft: 16 }}>{editing.name}</h2>
+        <p className="section-subtitle">{editing.songIds.length} songs in setlist</p>
         <SetlistManager
           availableSongs={songs}
           songIds={editing.songIds}
@@ -41,103 +40,59 @@ const SetlistScreen = ({ navigation }: any) => {
           }}
         />
         {editing.songIds.length > 0 && (
-          <TouchableOpacity
-            style={styles.playBtn}
-            activeOpacity={0.8}
-            onPress={() => {
+          <button
+            className="btn-primary full-width"
+            style={{ margin: '0 16px 16px' }}
+            onClick={() => {
               setCurrentSetlistId(editing.id);
               setCurrentSongId(editing.songIds[0]);
-              navigation.navigate('Viewer');
+              navigate('/viewer');
             }}
           >
-            <Text style={styles.playText}>▶  Play Setlist</Text>
-          </TouchableOpacity>
+            ▶  Play Setlist
+          </button>
         )}
-      </View>
+      </div>
     );
   }
 
   return (
-    <View style={styles.container}>
-      <View style={styles.addRow}>
-        <TextInput
-          style={styles.input}
+    <div className="screen">
+      <div className="add-row">
+        <input
+          className="input-field"
           placeholder="New setlist name…"
-          placeholderTextColor="#666"
           value={newName}
-          onChangeText={setNewName}
-          onSubmitEditing={addSetlist}
+          onChange={(e) => setNewName(e.target.value)}
+          onKeyDown={(e) => { if (e.key === 'Enter') addSetlist(); }}
         />
-        <TouchableOpacity style={styles.addBtn} onPress={addSetlist}>
-          <Text style={styles.addBtnText}>+</Text>
-        </TouchableOpacity>
-      </View>
-      <FlatList
-        data={setlists}
-        keyExtractor={(sl) => sl.id}
-        contentContainerStyle={styles.list}
-        ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Text style={styles.emptyIcon}>📋</Text>
-            <Text style={styles.emptyText}>No setlists yet</Text>
-            <Text style={styles.emptyHint}>Create one above to organize your songs</Text>
-          </View>
-        }
-        renderItem={({ item }) => (
-          <TouchableOpacity style={styles.card} activeOpacity={0.7} onPress={() => setEditingId(item.id)}>
-            <View style={styles.cardLeft}>
-              <Text style={styles.slName}>{item.name}</Text>
-              <Text style={styles.slMeta}>{item.songIds.length} {item.songIds.length === 1 ? 'song' : 'songs'}</Text>
-            </View>
-            <TouchableOpacity
-              style={styles.deleteBtn}
-              onPress={() => deleteSetlist(item.id)}
-              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-            >
-              <Text style={styles.deleteText}>✕</Text>
-            </TouchableOpacity>
-          </TouchableOpacity>
+        <button className="btn-primary small" onClick={addSetlist}>+</button>
+      </div>
+      <div className="card-list">
+        {setlists.length === 0 && (
+          <div className="empty-state">
+            <span className="empty-icon">📋</span>
+            <p className="empty-text">No setlists yet</p>
+            <p className="empty-hint">Create one above to organize your songs</p>
+          </div>
         )}
-      />
-    </View>
+        {setlists.map((item) => (
+          <div key={item.id} className="song-card" onClick={() => setEditingId(item.id)}>
+            <div className="song-card-left">
+              <div className="song-title">{item.name}</div>
+              <div className="song-artist">{item.songIds.length} {item.songIds.length === 1 ? 'song' : 'songs'}</div>
+            </div>
+            <button
+              className="delete-btn"
+              onClick={(e) => { e.stopPropagation(); deleteSetlist(item.id); }}
+            >
+              ✕
+            </button>
+          </div>
+        ))}
+      </div>
+    </div>
   );
 };
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#121212' },
-  addRow: { flexDirection: 'row', paddingHorizontal: 16, paddingTop: 12, paddingBottom: 4 },
-  input: {
-    flex: 1, borderWidth: 1, borderColor: '#333', borderRadius: 12, padding: 12,
-    fontSize: 16, color: '#FFFFFF', backgroundColor: '#1E1E1E',
-  },
-  addBtn: {
-    backgroundColor: '#4FC3F7', borderRadius: 12, width: 48, marginLeft: 10,
-    alignItems: 'center', justifyContent: 'center',
-  },
-  addBtnText: { color: '#121212', fontSize: 24, fontWeight: '600' },
-  list: { paddingHorizontal: 16, paddingTop: 8, paddingBottom: 20 },
-  card: {
-    backgroundColor: '#1E1E1E', borderRadius: 12, padding: 16,
-    marginBottom: 10, flexDirection: 'row', alignItems: 'center',
-  },
-  cardLeft: { flex: 1 },
-  slName: { fontSize: 17, fontWeight: '600', color: '#FFFFFF', marginBottom: 3 },
-  slMeta: { fontSize: 14, color: '#AAA' },
-  deleteBtn: { padding: 8 },
-  deleteText: { fontSize: 16, color: '#FF5252' },
-  emptyContainer: { alignItems: 'center', marginTop: 60 },
-  emptyIcon: { fontSize: 48, marginBottom: 12 },
-  emptyText: { fontSize: 18, color: '#FFFFFF', fontWeight: '600', marginBottom: 4 },
-  emptyHint: { fontSize: 14, color: '#888' },
-  backBtn: { paddingHorizontal: 16, paddingTop: 16, paddingBottom: 8 },
-  backText: { fontSize: 16, color: '#4FC3F7', fontWeight: '600' },
-  editTitle: { fontSize: 22, fontWeight: 'bold', color: '#FFFFFF', paddingHorizontal: 16 },
-  editSubtitle: { fontSize: 14, color: '#AAA', paddingHorizontal: 16, marginBottom: 8 },
-  playBtn: {
-    backgroundColor: '#4FC3F7', borderRadius: 12, padding: 16, marginHorizontal: 16,
-    marginBottom: 16, alignItems: 'center',
-  },
-  playText: { color: '#121212', fontSize: 18, fontWeight: 'bold' },
-});
 
 export default SetlistScreen;

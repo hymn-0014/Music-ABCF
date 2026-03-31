@@ -1,20 +1,10 @@
 import React, { useState } from 'react';
-import { View, Text, Switch, TouchableOpacity, ActivityIndicator, StyleSheet, ScrollView, Platform } from 'react-native';
 import useAppStore from '../store/useAppStore';
 import { signOut } from '../services/authService';
 import { SyncConfirmFn, SyncResult } from '../types';
 
 const webConfirm: SyncConfirmFn = async (title: string, message: string): Promise<boolean> => {
-  if (Platform.OS === 'web') {
-    return window.confirm(`${title}\n\n${message}`);
-  }
-  return new Promise((resolve) => {
-    const { Alert } = require('react-native');
-    Alert.alert(title, message, [
-      { text: 'Skip', style: 'cancel', onPress: () => resolve(false) },
-      { text: 'Overwrite', style: 'destructive', onPress: () => resolve(true) },
-    ]);
-  });
+  return window.confirm(`${title}\n\n${message}`);
 };
 
 const formatSyncResult = (result: SyncResult, direction: 'push' | 'pull'): string => {
@@ -64,89 +54,66 @@ const SettingsScreen = () => {
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Display</Text>
-        <View style={styles.card}>
-          <View style={styles.row}>
-            <View style={styles.rowLeft}>
-              <Text style={styles.rowIcon}>🌙</Text>
-              <Text style={styles.label}>Dark Mode</Text>
-            </View>
-            <Switch value={darkMode} onValueChange={toggleDarkMode} trackColor={{ false: '#555', true: '#4FC3F7' }} thumbColor="#fff" />
-          </View>
-          <View style={styles.divider} />
-          <View style={styles.row}>
-            <View style={styles.rowLeft}>
-              <Text style={styles.rowIcon}>♯</Text>
-              <Text style={styles.label}>Prefer Sharps</Text>
-            </View>
-            <Switch
-              value={accidental === 'sharp'}
-              onValueChange={(v) => setAccidental(v ? 'sharp' : 'flat')}
-              trackColor={{ false: '#555', true: '#4FC3F7' }}
-              thumbColor="#fff"
-            />
-          </View>
-        </View>
-      </View>
+    <div className="screen settings-screen">
+      <div className="settings-section">
+        <h3 className="settings-section-title">Display</h3>
+        <div className="settings-card">
+          <div className="settings-row">
+            <div className="settings-row-left">
+              <span className="settings-icon">🌙</span>
+              <span>Dark Mode</span>
+            </div>
+            <label className="toggle-switch">
+              <input type="checkbox" checked={darkMode} onChange={toggleDarkMode} />
+              <span className="toggle-slider" />
+            </label>
+          </div>
+          <div className="settings-divider" />
+          <div className="settings-row">
+            <div className="settings-row-left">
+              <span className="settings-icon">♯</span>
+              <span>Prefer Sharps</span>
+            </div>
+            <label className="toggle-switch">
+              <input type="checkbox" checked={accidental === 'sharp'} onChange={(e) => setAccidental(e.target.checked ? 'sharp' : 'flat')} />
+              <span className="toggle-slider" />
+            </label>
+          </div>
+        </div>
+      </div>
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Cloud Sync</Text>
-        <Text style={styles.syncInfo}>
-          Local: {songs.length} song(s), {setlists.length} setlist(s)
-        </Text>
-        <View style={styles.card}>
-          <TouchableOpacity style={styles.syncRow} onPress={() => handleSync('push')} disabled={syncing !== null}>
-            <Text style={styles.rowIcon}>☁️</Text>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.label}>Upload to Cloud</Text>
-              <Text style={styles.syncHint}>Uploads local songs & setlists not in cloud</Text>
-            </View>
-            {syncing === 'push' ? <ActivityIndicator color="#4FC3F7" size="small" /> : <Text style={styles.arrow}>→</Text>}
-          </TouchableOpacity>
-          <View style={styles.divider} />
-          <TouchableOpacity style={styles.syncRow} onPress={() => handleSync('pull')} disabled={syncing !== null}>
-            <Text style={styles.rowIcon}>📥</Text>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.label}>Download from Cloud</Text>
-              <Text style={styles.syncHint}>Downloads cloud songs & setlists not on device</Text>
-            </View>
-            {syncing === 'pull' ? <ActivityIndicator color="#4FC3F7" size="small" /> : <Text style={styles.arrow}>→</Text>}
-          </TouchableOpacity>
-        </View>
+      <div className="settings-section">
+        <h3 className="settings-section-title">Cloud Sync</h3>
+        <p className="sync-info">Local: {songs.length} song(s), {setlists.length} setlist(s)</p>
+        <div className="settings-card">
+          <button className="settings-sync-row" onClick={() => handleSync('push')} disabled={syncing !== null}>
+            <span className="settings-icon">☁️</span>
+            <div className="settings-sync-info">
+              <span>Upload to Cloud</span>
+              <span className="settings-hint">Uploads local songs & setlists not in cloud</span>
+            </div>
+            {syncing === 'push' ? <span className="spinner-small" /> : <span className="arrow">→</span>}
+          </button>
+          <div className="settings-divider" />
+          <button className="settings-sync-row" onClick={() => handleSync('pull')} disabled={syncing !== null}>
+            <span className="settings-icon">📥</span>
+            <div className="settings-sync-info">
+              <span>Download from Cloud</span>
+              <span className="settings-hint">Downloads cloud songs & setlists not on device</span>
+            </div>
+            {syncing === 'pull' ? <span className="spinner-small" /> : <span className="arrow">→</span>}
+          </button>
+        </div>
         {syncMsg !== '' && (
-          <Text style={[styles.syncMsg, syncMsg.startsWith('✗') && { color: '#FF5252' }]}>{syncMsg}</Text>
+          <p className={`sync-msg ${syncMsg.startsWith('✗') ? 'error' : ''}`}>{syncMsg}</p>
         )}
-      </View>
+      </div>
 
-      <View style={styles.section}>
-        <TouchableOpacity style={styles.signOutBtn} onPress={signOut}>
-          <Text style={styles.signOutText}>Sign Out</Text>
-        </TouchableOpacity>
-      </View>
-    </ScrollView>
+      <div className="settings-section">
+        <button className="btn-danger full-width" onClick={signOut}>Sign Out</button>
+      </div>
+    </div>
   );
 };
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#121212' },
-  content: { padding: 16, paddingBottom: 40 },
-  section: { marginBottom: 24 },
-  sectionTitle: { fontSize: 13, fontWeight: '600', color: '#888', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8, marginLeft: 4 },
-  card: { backgroundColor: '#1E1E1E', borderRadius: 12, overflow: 'hidden' },
-  row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 14, paddingHorizontal: 16 },
-  rowLeft: { flexDirection: 'row', alignItems: 'center' },
-  rowIcon: { fontSize: 18, marginRight: 12, width: 24, textAlign: 'center' },
-  label: { fontSize: 16, color: '#FFFFFF' },
-  divider: { height: 1, backgroundColor: '#2A2A2A', marginLeft: 52 },
-  syncRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 14, paddingHorizontal: 16 },
-  syncInfo: { fontSize: 13, color: '#4FC3F7', marginBottom: 8, marginLeft: 4 },
-  syncHint: { fontSize: 12, color: '#666', marginTop: 2 },
-  arrow: { marginLeft: 'auto', color: '#555', fontSize: 18 },
-  syncMsg: { fontSize: 13, color: '#4FC3F7', marginTop: 8, marginLeft: 4 },
-  signOutBtn: { backgroundColor: '#FF5252', borderRadius: 12, paddingVertical: 14, alignItems: 'center' },
-  signOutText: { color: '#fff', fontSize: 16, fontWeight: '600' },
-});
 
 export default SettingsScreen;

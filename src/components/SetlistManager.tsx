@@ -1,5 +1,4 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, TouchableOpacity, TextInput, FlatList, StyleSheet } from 'react-native';
 import { Song } from '../types';
 
 interface SetlistManagerProps {
@@ -43,45 +42,35 @@ const SetlistManager: React.FC<SetlistManagerProps> = ({ availableSongs, songIds
   );
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.heading}>Setlist</Text>
-      <FlatList
-        data={songIds}
-        keyExtractor={(id) => id}
-        renderItem={({ item, index }) => (
-          <View style={styles.row}>
-            <Text style={styles.songTitle}>{songMap.get(item)?.title ?? item}</Text>
-            <TouchableOpacity onPress={() => moveItem(index, -1)}><Text style={styles.action}>▲</Text></TouchableOpacity>
-            <TouchableOpacity onPress={() => moveItem(index, 1)}><Text style={styles.action}>▼</Text></TouchableOpacity>
-            <TouchableOpacity onPress={() => removeSong(index)}><Text style={styles.remove}>✕</Text></TouchableOpacity>
-          </View>
-        )}
+    <div className="setlist-manager">
+      <h3 className="setlist-heading">Setlist</h3>
+      <div className="setlist-items">
+        {songIds.map((id, index) => (
+          <div key={id} className="setlist-row">
+            <span className="setlist-song-title">{songMap.get(id)?.title ?? id}</span>
+            <button className="setlist-action" onClick={() => moveItem(index, -1)}>▲</button>
+            <button className="setlist-action" onClick={() => moveItem(index, 1)}>▼</button>
+            <button className="setlist-remove" onClick={() => removeSong(index)}>✕</button>
+          </div>
+        ))}
+      </div>
+      <h3 className="setlist-heading">Add Songs</h3>
+      <input
+        className="setlist-filter"
+        placeholder="Filter songs…"
+        value={filterText}
+        onChange={(e) => setFilterText(e.target.value)}
       />
-      <Text style={styles.heading}>Add Songs</Text>
-      <TextInput style={styles.input} placeholder="Filter songs…" value={filterText} onChangeText={setFilterText} />
-      <FlatList
-        data={filteredAvailable}
-        keyExtractor={(s) => s.id}
-        renderItem={({ item }) => (
-          <TouchableOpacity style={styles.addRow} onPress={() => addSong(item.id)}>
-            <Text style={styles.songTitle}>{item.title}</Text>
-            <Text style={styles.action}>＋</Text>
-          </TouchableOpacity>
-        )}
-      />
-    </View>
+      <div className="setlist-items">
+        {filteredAvailable.map((song) => (
+          <button key={song.id} className="setlist-add-row" onClick={() => addSong(song.id)}>
+            <span className="setlist-song-title">{song.title}</span>
+            <span className="setlist-action">＋</span>
+          </button>
+        ))}
+      </div>
+    </div>
   );
 };
-
-const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16 },
-  heading: { fontSize: 20, fontWeight: 'bold', marginVertical: 8, color: '#FFFFFF' },
-  row: { flexDirection: 'row', alignItems: 'center', paddingVertical: 8, borderBottomWidth: 1, borderColor: '#333' },
-  addRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 8 },
-  songTitle: { flex: 1, fontSize: 16, color: '#FFFFFF' },
-  action: { fontSize: 20, paddingHorizontal: 8, color: '#4FC3F7' },
-  remove: { fontSize: 18, paddingHorizontal: 8, color: '#FF5252' },
-  input: { borderWidth: 1, borderColor: '#333', borderRadius: 8, padding: 8, marginBottom: 8, color: '#FFFFFF', backgroundColor: '#1E1E1E' },
-});
 
 export default SetlistManager;
