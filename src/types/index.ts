@@ -8,6 +8,7 @@ export interface Song {
   title: string;
   artist: string;
   key: string; // original key, e.g. "G"
+  tempo: number;
   lines: ChordLyricLine[];
 }
 

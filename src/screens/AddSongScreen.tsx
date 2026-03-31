@@ -22,11 +22,14 @@ const AddSongScreen = ({ navigation }: any) => {
 
   const [title, setTitle] = useState('');
   const [artist, setArtist] = useState('');
+  const [tempo, setTempo] = useState('90');
   const [chordText, setChordText] = useState('');
   const [url, setUrl] = useState('');
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState('');
   const [activeTab, setActiveTab] = useState<'text' | 'url'>('text');
+
+  const parsedTempo = Math.min(240, Math.max(40, Number.parseInt(tempo, 10) || 90));
 
   const handleAddFromText = () => {
     if (!chordText.trim()) {
@@ -38,7 +41,13 @@ const AddSongScreen = ({ navigation }: any) => {
       setStatus('Could not parse chords. Use alternating chord/lyric lines:\n\nG   C   G\nAmazing grace how sweet');
       return;
     }
-    const newSong = { ...result, id: `song-${Date.now()}`, title: title || result.title, artist: artist || result.artist };
+    const newSong = {
+      ...result,
+      id: `song-${Date.now()}`,
+      title: title || result.title,
+      artist: artist || result.artist,
+      tempo: parsedTempo,
+    };
     setSongs([...songs, newSong]);
     pushToCloud();
     showAlert('Success', `"${newSong.title}" added!`);
@@ -58,7 +67,13 @@ const AddSongScreen = ({ navigation }: any) => {
         setStatus('Could not extract chords from that URL.\n\nTry copying the chord text from the page and using the Paste tab instead.');
         return;
       }
-      const newSong = { ...result, id: `song-${Date.now()}`, title: title || result.title, artist: artist || result.artist };
+      const newSong = {
+        ...result,
+        id: `song-${Date.now()}`,
+        title: title || result.title,
+        artist: artist || result.artist,
+        tempo: parsedTempo,
+      };
       setSongs([...songs, newSong]);
       pushToCloud();
       showAlert('Success', `"${newSong.title}" added!`);
@@ -80,6 +95,24 @@ const AddSongScreen = ({ navigation }: any) => {
         <View style={styles.metaField}>
           <Text style={styles.label}>Artist</Text>
           <TextInput style={styles.input} placeholder="Artist name" placeholderTextColor="#666" value={artist} onChangeText={setArtist} />
+        </View>
+      </View>
+
+      <View style={styles.tempoRow}>
+        <View style={styles.tempoField}>
+          <Text style={styles.label}>Tempo</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="90"
+            placeholderTextColor="#666"
+            keyboardType="numeric"
+            value={tempo}
+            onChangeText={setTempo}
+          />
+        </View>
+        <View style={styles.tempoHintWrap}>
+          <Text style={styles.tempoHint}>{parsedTempo} BPM</Text>
+          <Text style={styles.tempoSubhint}>Saved with the song</Text>
         </View>
       </View>
 
@@ -150,6 +183,11 @@ const styles = StyleSheet.create({
   content: { padding: 20, paddingBottom: 40 },
   metaRow: { flexDirection: 'row', gap: 12, marginBottom: 20 },
   metaField: { flex: 1 },
+  tempoRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 12, marginBottom: 20 },
+  tempoField: { flex: 1 },
+  tempoHintWrap: { paddingBottom: 12 },
+  tempoHint: { color: '#4FC3F7', fontSize: 16, fontWeight: '700' },
+  tempoSubhint: { color: '#888', fontSize: 12, marginTop: 2 },
   label: { fontSize: 13, fontWeight: '600', marginBottom: 6, color: '#AAA', textTransform: 'uppercase', letterSpacing: 0.5 },
   input: {
     borderWidth: 1, borderColor: '#333', borderRadius: 10, padding: 12,
