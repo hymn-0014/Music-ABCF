@@ -80,7 +80,10 @@ function MainTabs() {
   );
 }
 
-const linking = Platform.OS === 'web' ? { prefixes: [] as string[], config: { screens: { Main: '', Viewer: 'viewer', AddSong: 'add-song' } } } : undefined;
+const linking = Platform.OS === 'web' ? { 
+  prefixes: ['https://hymn-0014.github.io/Music-ABCF', 'music-abcf://'],
+  config: { screens: { Main: '', Viewer: 'viewer', AddSong: 'add-song' } } 
+} : undefined;
 
 export default function App() {
   const [loading, setLoading] = useState(true);
