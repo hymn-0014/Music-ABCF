@@ -19,3 +19,4 @@ android/local.properties
 
 dist/
 .expo/
+firebase-debug.log

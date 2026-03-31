@@ -1156,6 +1156,20 @@ a { color: #4FC3F7; text-decoration: none; }
 }
 
 /* ===== Modification History ===== */
+.btn-outline-small {
+  background: transparent;
+  border: 1px solid #555;
+  color: #aaa;
+  padding: 6px 14px;
+  border-radius: 6px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.btn-outline-small:hover {
+  background: #333;
+  color: #fff;
+}
 .mod-info {
   font-size: 13px;
   color: #aaa;

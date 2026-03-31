@@ -14,6 +14,7 @@ const SetlistScreen = () => {
   const userEmail = useAppStore((s) => s.userEmail);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [newName, setNewName] = useState('');
+  const [showHistory, setShowHistory] = useState(false);
 
   const addSetlist = () => {
     if (!newName.trim()) return;
@@ -63,25 +64,36 @@ const SetlistScreen = () => {
             ▶  Play Setlist
           </button>
         )}
-        {/* Modification History */}
-        {editing.lastModifiedBy && (
-          <div className="mod-info" style={{ padding: '0 16px' }}>
-            <span className="mod-label">Last modified by:</span> {editing.lastModifiedBy}
-            {editing.lastModifiedAt && <span className="mod-date"> — {new Date(editing.lastModifiedAt).toLocaleString()}</span>}
-          </div>
-        )}
-        {editing.modificationHistory && editing.modificationHistory.length > 0 && (
-          <div className="mod-history" style={{ margin: '0 16px 16px' }}>
-            <h4 className="mod-history-title">Modification History</h4>
-            <ul className="mod-history-list">
-              {[...editing.modificationHistory].reverse().map((entry, i) => (
-                <li key={i} className="mod-history-item">
-                  <span className="mod-action">{entry.action}</span>
-                  <span className="mod-user">{entry.userEmail}</span>
-                  <span className="mod-time">{new Date(entry.timestamp).toLocaleString()}</span>
-                </li>
-              ))}
-            </ul>
+        {/* Modification History Toggle */}
+        {(editing.lastModifiedBy || (editing.modificationHistory && editing.modificationHistory.length > 0)) && (
+          <div style={{ padding: '0 16px 16px' }}>
+            <button className="btn-outline-small" onClick={() => setShowHistory(!showHistory)}>
+              {showHistory ? '▾ Hide Changes' : '▸ Show Changes'}
+            </button>
+            {showHistory && (
+              <>
+                {editing.lastModifiedBy && (
+                  <div className="mod-info" style={{ marginTop: 8 }}>
+                    <span className="mod-label">Last modified by:</span> {editing.lastModifiedBy}
+                    {editing.lastModifiedAt && <span className="mod-date"> — {new Date(editing.lastModifiedAt).toLocaleString()}</span>}
+                  </div>
+                )}
+                {editing.modificationHistory && editing.modificationHistory.length > 0 && (
+                  <div className="mod-history">
+                    <h4 className="mod-history-title">Modification History</h4>
+                    <ul className="mod-history-list">
+                      {[...editing.modificationHistory].reverse().map((entry, i) => (
+                        <li key={i} className="mod-history-item">
+                          <span className="mod-action">{entry.action}</span>
+                          <span className="mod-user">{entry.userEmail}</span>
+                          <span className="mod-time">{new Date(entry.timestamp).toLocaleString()}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </>
+            )}
           </div>
         )}
       </div>

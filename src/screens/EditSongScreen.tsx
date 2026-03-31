@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import useAppStore from '../store/useAppStore';
 import { parseChordsFromText } from '../services/chordExtractor';
+import { uploadSingleSong } from '../services/firebaseService';
 
 const linesToText = (lines: { chords: string; lyrics: string }[]): string =>
   lines.map((line) => line.chords && line.chords.trim() ? `${line.chords}\n${line.lyrics}` : line.lyrics).join('\n');
@@ -12,7 +13,7 @@ const EditSongScreen = () => {
   const songs = useAppStore((s) => s.songs);
   const updateSong = useAppStore((s) => s.updateSong);
   const deleteSong = useAppStore((s) => s.deleteSong);
-  const pushToCloud = useAppStore((s) => s.pushToCloud);
+  const uid = useAppStore((s) => s.uid);
 
   const song = songs.find((s) => s.id === songId);
 
@@ -22,6 +23,7 @@ const EditSongScreen = () => {
   const [chordText, setChordText] = useState(song ? linesToText(song.lines) : '');
   const [status, setStatus] = useState('');
   const [cloudSyncing, setCloudSyncing] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
 
   const parsedTempo = Math.min(240, Math.max(40, Number.parseInt(tempo, 10) || 90));
 
@@ -49,7 +51,12 @@ const EditSongScreen = () => {
     if (!result || result.lines.length === 0) { setStatus('Could not parse chords.'); return; }
     updateSong(songId!, { title: title || song.title, artist: artist || song.artist, key: result.key || song.key, tempo: parsedTempo, lines: result.lines });
     setCloudSyncing(true);
-    try { await pushToCloud(); window.alert(`"${title || song.title}" updated and synced!`); }
+    try {
+      // Push only this specific song — not the entire library
+      const updatedSong = useAppStore.getState().songs.find((s) => s.id === songId);
+      if (uid && updatedSong) await uploadSingleSong(uid, updatedSong);
+      window.alert(`"${title || song.title}" updated and synced!`);
+    }
     catch { window.alert(`Updated locally but cloud sync failed.`); }
     finally { setCloudSyncing(false); }
     navigate('/');
@@ -104,25 +111,36 @@ const EditSongScreen = () => {
 
         {status && <div className="status-box"><p className="status-text">{status}</p></div>}
 
-        {/* Modification History */}
-        {song.lastModifiedBy && (
-          <div className="mod-info">
-            <span className="mod-label">Last modified by:</span> {song.lastModifiedBy}
-            {song.lastModifiedAt && <span className="mod-date"> — {new Date(song.lastModifiedAt).toLocaleString()}</span>}
-          </div>
-        )}
-        {song.modificationHistory && song.modificationHistory.length > 0 && (
-          <div className="mod-history">
-            <h4 className="mod-history-title">Modification History</h4>
-            <ul className="mod-history-list">
-              {[...song.modificationHistory].reverse().map((entry, i) => (
-                <li key={i} className="mod-history-item">
-                  <span className="mod-action">{entry.action}</span>
-                  <span className="mod-user">{entry.userEmail}</span>
-                  <span className="mod-time">{new Date(entry.timestamp).toLocaleString()}</span>
-                </li>
-              ))}
-            </ul>
+        {/* Modification History Toggle */}
+        {(song.lastModifiedBy || (song.modificationHistory && song.modificationHistory.length > 0)) && (
+          <div>
+            <button className="btn-outline-small" onClick={() => setShowHistory(!showHistory)}>
+              {showHistory ? '▾ Hide Changes' : '▸ Show Changes'}
+            </button>
+            {showHistory && (
+              <>
+                {song.lastModifiedBy && (
+                  <div className="mod-info" style={{ marginTop: 8 }}>
+                    <span className="mod-label">Last modified by:</span> {song.lastModifiedBy}
+                    {song.lastModifiedAt && <span className="mod-date"> — {new Date(song.lastModifiedAt).toLocaleString()}</span>}
+                  </div>
+                )}
+                {song.modificationHistory && song.modificationHistory.length > 0 && (
+                  <div className="mod-history">
+                    <h4 className="mod-history-title">Modification History</h4>
+                    <ul className="mod-history-list">
+                      {[...song.modificationHistory].reverse().map((entry, i) => (
+                        <li key={i} className="mod-history-item">
+                          <span className="mod-action">{entry.action}</span>
+                          <span className="mod-user">{entry.userEmail}</span>
+                          <span className="mod-time">{new Date(entry.timestamp).toLocaleString()}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </>
+            )}
           </div>
         )}
       </div>

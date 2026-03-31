@@ -38,8 +38,7 @@ const AddSongScreen = () => {
     const entry: ModificationEntry = { userEmail: email, action: 'created', timestamp: now };
     const newSong = { ...result, id: `song-${Date.now()}`, title: title || result.title, artist: artist || result.artist, tempo: parsedTempo, lastModifiedBy: email, lastModifiedAt: now, modificationHistory: [entry] };
     setSongs([...songs, newSong]);
-    if (uid) uploadSingleSong(uid, newSong).catch(console.error);
-    window.alert(`"${newSong.title}" added!`);
+    window.alert(`"${newSong.title}" added locally! Use Sync to upload to cloud.`);
     navigate('/');
   };
 
@@ -82,8 +81,7 @@ const AddSongScreen = () => {
       const fileEntry: ModificationEntry = { userEmail: fileEmail, action: 'created', timestamp: fileNow };
       const newSong = { ...result, id: `song-${Date.now()}`, title: title || result.title, artist: artist || result.artist, tempo: parsedTempo, lastModifiedBy: fileEmail, lastModifiedAt: fileNow, modificationHistory: [fileEntry] };
       setSongs([...songs, newSong]);
-      if (uid) { try { await uploadSingleSong(uid, newSong); } catch { /* fallback */ } }
-      window.alert(`"${newSong.title}" added!`);
+      window.alert(`"${newSong.title}" added locally! Use Sync to upload to cloud.`);
       navigate('/');
     } catch { setStatus('Could not read file.'); }
     finally { setLoading(false); }
@@ -112,8 +110,7 @@ const AddSongScreen = () => {
       const urlEntry: ModificationEntry = { userEmail: urlEmail, action: 'created', timestamp: urlNow };
       const newSong = { ...result, id: `song-${Date.now()}`, title: title || result.title, artist: artist || result.artist, tempo: parsedTempo, lastModifiedBy: urlEmail, lastModifiedAt: urlNow, modificationHistory: [urlEntry] };
       setSongs([...songs, newSong]);
-      if (uid) { try { await uploadSingleSong(uid, newSong); } catch { /* fallback */ } }
-      window.alert(`"${newSong.title}" added!`);
+      window.alert(`"${newSong.title}" added locally! Use Sync to upload to cloud.`);
       navigate('/');
     } catch { setStatus('Network/CORS error. Try the "Paste Text" tab.'); }
     finally { setLoading(false); }
