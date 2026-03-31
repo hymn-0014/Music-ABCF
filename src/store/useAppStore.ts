@@ -57,6 +57,23 @@ const normalizeSong = (song: Song): Song => ({
   tempo: typeof song.tempo === 'number' ? Math.min(240, Math.max(40, Math.round(song.tempo))) : 90,
 });
 
+/** Stable JSON for comparison — sort keys so field ordering from Firestore doesn't matter */
+const stableJSON = (obj: unknown): string =>
+  JSON.stringify(obj, (_, v) => {
+    if (v && typeof v === 'object' && !Array.isArray(v)) {
+      return Object.keys(v).sort().reduce<Record<string, unknown>>((acc, k) => { acc[k] = (v as Record<string, unknown>)[k]; return acc; }, {});
+    }
+    return v;
+  });
+
+/** Compare two songs' content (lines, tempo, key) ignoring field order and whitespace differences */
+const songsContentEqual = (a: Song, b: Song): boolean => {
+  if (Math.round(a.tempo ?? 90) !== Math.round(b.tempo ?? 90)) return false;
+  if ((a.key ?? '').trim() !== (b.key ?? '').trim()) return false;
+  if (a.lines.length !== b.lines.length) return false;
+  return stableJSON(a.lines) === stableJSON(b.lines);
+};
+
 const mergeSongs = (baseSongs: Song[], incomingSongs: Song[]): Song[] => {
   const merged = [...baseSongs.map(normalizeSong)];
   const existingKeys = new Set(
@@ -196,10 +213,7 @@ const useAppStore = create<AppState>((set, get) => ({
         await uploadSingleSong(uid, song);
         result.songsUploaded++;
       } else {
-        const linesMatch = JSON.stringify(cloudSong.lines) === JSON.stringify(song.lines);
-        const tempoMatch = cloudSong.tempo === song.tempo;
-        const keyMatch = cloudSong.key === song.key;
-        if (!linesMatch || !tempoMatch || !keyMatch) {
+        if (!songsContentEqual(song, cloudSong)) {
           const shouldOverwrite = await confirmFn(
             'Duplicate Song',
             `"${song.title}" by ${song.artist} already exists in cloud with different content.\n\nOverwrite the cloud version with your local version?`,
@@ -286,10 +300,7 @@ const useAppStore = create<AppState>((set, get) => ({
         newSongs.push(normalizeSong(cloudSong));
         result.songsDownloaded++;
       } else {
-        const linesMatch = JSON.stringify(localSong.lines) === JSON.stringify(cloudSong.lines);
-        const tempoMatch = localSong.tempo === cloudSong.tempo;
-        const keyMatch = localSong.key === cloudSong.key;
-        if (!linesMatch || !tempoMatch || !keyMatch) {
+        if (!songsContentEqual(localSong, cloudSong)) {
           const shouldOverwrite = await confirmFn(
             'Duplicate Song',
             `"${cloudSong.title}" by ${cloudSong.artist} exists locally with different content.\n\nOverwrite your local version with the cloud version?`,

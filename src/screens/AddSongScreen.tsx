@@ -5,6 +5,7 @@ import {
 } from 'react-native';
 import useAppStore from '../store/useAppStore';
 import { parseChordsFromText, fetchChordsFromUrl } from '../services/chordExtractor';
+import { uploadSingleSong } from '../services/firebaseService';
 
 const showAlert = (title: string, message: string) => {
   if (Platform.OS === 'web') {
@@ -18,6 +19,7 @@ const showAlert = (title: string, message: string) => {
 const AddSongScreen = ({ navigation }: any) => {
   const songs = useAppStore((s) => s.songs);
   const setSongs = useAppStore((s) => s.setSongs);
+  const uid = useAppStore((s) => s.uid);
   const pushToCloud = useAppStore((s) => s.pushToCloud);
 
   const [title, setTitle] = useState('');
@@ -50,7 +52,12 @@ const AddSongScreen = ({ navigation }: any) => {
       tempo: parsedTempo,
     };
     setSongs([...songs, newSong]);
-    pushToCloud().catch(() => {});
+    // Upload the individual song directly instead of relying on full batch push
+    if (uid) {
+      uploadSingleSong(uid, newSong).catch((err) => {
+        console.error('Cloud upload failed for new song:', err);
+      });
+    }
     showAlert('Success', `"${newSong.title}" added!`);
     navigation.goBack();
   };
@@ -75,7 +82,10 @@ const AddSongScreen = ({ navigation }: any) => {
     setSongs([...songs, newSong]);
     setCloudSyncing(true);
     try {
-      await pushToCloud();
+      // Upload the new song individually first, then full sync
+      if (uid) {
+        await uploadSingleSong(uid, newSong);
+      }
       showAlert('Success', `"${newSong.title}" added and synced to cloud!`);
     } catch {
       showAlert('Partial Success', `"${newSong.title}" added locally but cloud sync failed. Try uploading from Settings.`);

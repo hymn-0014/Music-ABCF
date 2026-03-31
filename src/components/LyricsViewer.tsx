@@ -107,11 +107,12 @@ const LyricsViewer: React.FC<LyricsViewerProps> = ({
   return (
     <ScrollView
       ref={scrollRef}
-      style={[styles.container, Platform.OS === 'web' ? { overflow: 'auto' as any } : undefined]}
+      style={[styles.container, Platform.OS === 'web' ? { overflow: 'scroll' as any, maxHeight: '100%' as any } : undefined]}
       contentContainerStyle={styles.contentContainer}
       scrollEnabled={true}
       showsVerticalScrollIndicator={true}
       testID="lyrics-scroll"
+      {...(Platform.OS === 'web' ? { dataSet: { testid: 'lyrics-scroll' } } as any : {})}
       onLayout={(event) => {
         containerHeightRef.current = event.nativeEvent.layout.height;
       }}
@@ -160,7 +161,7 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
     backgroundColor: '#1A1A1A',
     minHeight: 0,
-    ...(Platform.OS === 'web' ? { overflow: 'auto' as any } : {}),
+    ...(Platform.OS === 'web' ? { overflow: 'scroll' as any } : {}),
   },
   contentContainer: {
     paddingBottom: 60,
