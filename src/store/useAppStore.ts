@@ -97,10 +97,25 @@ const useAppStore = create<AppState>((set, get) => ({
   autoScrollSpeed: 30,
   darkMode: true,
   setSongs: (songs) => set({ songs: songs.map(normalizeSong) }),
-  setSetlists: (setlists) => {
-    set({ setlists });
-    const { uid } = get();
-    if (uid) void syncSetlistsToFirestore(uid, setlists).catch(e => console.error('Setlist push failed:', e));
+  setSetlists: (newSetlists) => {
+    const { uid, setlists: oldSetlists } = get();
+    set({ setlists: newSetlists });
+    if (!uid) return;
+    const oldIds = new Set(oldSetlists.map((sl) => sl.id));
+    const newIds = new Set(newSetlists.map((sl) => sl.id));
+    // Upload new or changed setlists only
+    for (const sl of newSetlists) {
+      const old = oldSetlists.find((o) => o.id === sl.id);
+      if (!old || stableJSON(old) !== stableJSON(sl)) {
+        void uploadSingleSetlist(uid, sl).catch((e) => console.error('Setlist push failed:', e));
+      }
+    }
+    // Delete only setlists that were actually removed locally
+    for (const sl of oldSetlists) {
+      if (!newIds.has(sl.id)) {
+        void deleteSetlistFromFirestore(uid, sl.id).catch((e) => console.error('Setlist delete failed:', e));
+      }
+    }
   },
   updateSong: (id, updates) => {
     const { songs, userEmail } = get();
@@ -384,6 +399,15 @@ const useAppStore = create<AppState>((set, get) => ({
     const setlist = setlists.find((sl) => sl.id === setlistId);
     if (!setlist) throw new Error('Setlist not found');
 
+    // Remove any cloud setlist with the same name but different ID (cross-device dedup)
+    const cloudSetlists = await fetchSetlistsFromFirestore(uid);
+    const nameKey = setlist.name.trim().toLowerCase();
+    for (const csl of cloudSetlists) {
+      if (csl.id !== setlist.id && csl.name.trim().toLowerCase() === nameKey) {
+        await deleteSetlistFromFirestore(uid, csl.id);
+      }
+    }
+
     // Upload the setlist itself
     await uploadSingleSetlist(uid, setlist);
 
@@ -412,8 +436,12 @@ const useAppStore = create<AppState>((set, get) => ({
     const { uid, songs, setlists } = get();
     if (!uid) throw new Error('Not signed in');
 
-    // Add or replace the setlist locally
-    const existingIdx = setlists.findIndex((sl) => sl.id === cloudSetlist.id);
+    // Add or replace the setlist locally (match by ID or by name for cross-device sync)
+    const nameKey = cloudSetlist.name.trim().toLowerCase();
+    let existingIdx = setlists.findIndex((sl) => sl.id === cloudSetlist.id);
+    if (existingIdx < 0) {
+      existingIdx = setlists.findIndex((sl) => sl.name.trim().toLowerCase() === nameKey);
+    }
     const newSetlists = [...setlists];
     if (existingIdx >= 0) {
       newSetlists[existingIdx] = cloudSetlist;
