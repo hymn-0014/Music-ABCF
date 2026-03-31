@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity,
-  StyleSheet, ScrollView, Platform,
+  StyleSheet, ScrollView, Platform, ActivityIndicator,
 } from 'react-native';
 import useAppStore from '../store/useAppStore';
 import { parseChordsFromText } from '../services/chordExtractor';
@@ -41,6 +41,7 @@ const EditSongScreen = ({ route, navigation }: any) => {
   const songs = useAppStore((s) => s.songs);
   const updateSong = useAppStore((s) => s.updateSong);
   const deleteSong = useAppStore((s) => s.deleteSong);
+  const pushToCloud = useAppStore((s) => s.pushToCloud);
 
   const song = songs.find((s) => s.id === songId);
 
@@ -49,6 +50,7 @@ const EditSongScreen = ({ route, navigation }: any) => {
   const [tempo, setTempo] = useState(String(song?.tempo ?? 90));
   const [chordText, setChordText] = useState(song ? linesToText(song.lines) : '');
   const [status, setStatus] = useState('');
+  const [cloudSyncing, setCloudSyncing] = useState(false);
 
   const parsedTempo = Math.min(240, Math.max(40, Number.parseInt(tempo, 10) || 90));
 
@@ -81,6 +83,35 @@ const EditSongScreen = ({ route, navigation }: any) => {
       lines: result.lines,
     });
     showAlert('Success', `"${title || song.title}" updated!`);
+    navigation.goBack();
+  };
+
+  const handleSaveAndSync = async () => {
+    if (!chordText.trim()) {
+      setStatus('Chord text cannot be empty.');
+      return;
+    }
+    const result = parseChordsFromText(chordText, title, artist);
+    if (!result || result.lines.length === 0) {
+      setStatus('Could not parse chords. Use alternating chord/lyric lines.');
+      return;
+    }
+    updateSong(songId, {
+      title: title || song.title,
+      artist: artist || song.artist,
+      key: result.key || song.key,
+      tempo: parsedTempo,
+      lines: result.lines,
+    });
+    setCloudSyncing(true);
+    try {
+      await pushToCloud();
+      showAlert('Success', `"${title || song.title}" updated and synced to cloud!`);
+    } catch {
+      showAlert('Partial Success', `"${title || song.title}" updated locally but cloud sync failed.`);
+    } finally {
+      setCloudSyncing(false);
+    }
     navigation.goBack();
   };
 
@@ -134,6 +165,21 @@ const EditSongScreen = ({ route, navigation }: any) => {
         <Text style={styles.saveBtnText}>Save Changes</Text>
       </TouchableOpacity>
 
+      <TouchableOpacity
+        style={[styles.saveBtn, styles.cloudBtn]}
+        onPress={handleSaveAndSync}
+        disabled={cloudSyncing}
+      >
+        {cloudSyncing ? (
+          <View style={styles.loadingRow}>
+            <ActivityIndicator color="#121212" size="small" />
+            <Text style={[styles.saveBtnText, { marginLeft: 8 }]}>Syncing…</Text>
+          </View>
+        ) : (
+          <Text style={styles.saveBtnText}>☁️ Save & Update Cloud</Text>
+        )}
+      </TouchableOpacity>
+
       <TouchableOpacity style={styles.deleteBtn} onPress={handleDelete}>
         <Text style={styles.deleteBtnText}>Delete Song</Text>
       </TouchableOpacity>
@@ -175,6 +221,10 @@ const styles = StyleSheet.create({
     alignItems: 'center', marginTop: 14,
   },
   saveBtnText: { color: '#121212', fontSize: 17, fontWeight: '700' },
+  cloudBtn: {
+    backgroundColor: '#66BB6A',
+  },
+  loadingRow: { flexDirection: 'row', alignItems: 'center' },
   deleteBtn: {
     backgroundColor: '#2A2A2A', borderRadius: 12, paddingVertical: 16,
     alignItems: 'center', marginTop: 10, borderWidth: 1, borderColor: '#FF5252',

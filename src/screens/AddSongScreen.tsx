@@ -26,6 +26,7 @@ const AddSongScreen = ({ navigation }: any) => {
   const [chordText, setChordText] = useState('');
   const [url, setUrl] = useState('');
   const [loading, setLoading] = useState(false);
+  const [cloudSyncing, setCloudSyncing] = useState(false);
   const [status, setStatus] = useState('');
   const [activeTab, setActiveTab] = useState<'text' | 'url'>('text');
 
@@ -49,8 +50,38 @@ const AddSongScreen = ({ navigation }: any) => {
       tempo: parsedTempo,
     };
     setSongs([...songs, newSong]);
-    pushToCloud();
+    pushToCloud().catch(() => {});
     showAlert('Success', `"${newSong.title}" added!`);
+    navigation.goBack();
+  };
+
+  const handleAddAndSync = async () => {
+    if (!chordText.trim()) {
+      setStatus('Paste some chord/lyric text first.');
+      return;
+    }
+    const result = parseChordsFromText(chordText, title, artist);
+    if (!result || result.lines.length === 0) {
+      setStatus('Could not parse chords. Use alternating chord/lyric lines:\n\nG   C   G\nAmazing grace how sweet');
+      return;
+    }
+    const newSong = {
+      ...result,
+      id: `song-${Date.now()}`,
+      title: title || result.title,
+      artist: artist || result.artist,
+      tempo: parsedTempo,
+    };
+    setSongs([...songs, newSong]);
+    setCloudSyncing(true);
+    try {
+      await pushToCloud();
+      showAlert('Success', `"${newSong.title}" added and synced to cloud!`);
+    } catch {
+      showAlert('Partial Success', `"${newSong.title}" added locally but cloud sync failed. Try uploading from Settings.`);
+    } finally {
+      setCloudSyncing(false);
+    }
     navigation.goBack();
   };
 
@@ -75,8 +106,15 @@ const AddSongScreen = ({ navigation }: any) => {
         tempo: parsedTempo,
       };
       setSongs([...songs, newSong]);
-      pushToCloud();
-      showAlert('Success', `"${newSong.title}" added!`);
+      setCloudSyncing(true);
+      try {
+        await pushToCloud();
+        showAlert('Success', `"${newSong.title}" added and synced to cloud!`);
+      } catch {
+        showAlert('Partial Success', `"${newSong.title}" added locally but cloud sync failed.`);
+      } finally {
+        setCloudSyncing(false);
+      }
       navigation.goBack();
     } catch {
       setStatus('Failed to fetch URL. Check your connection and try again.');
@@ -90,11 +128,11 @@ const AddSongScreen = ({ navigation }: any) => {
       <View style={styles.metaRow}>
         <View style={styles.metaField}>
           <Text style={styles.label}>Title</Text>
-          <TextInput style={styles.input} placeholder="Song title" placeholderTextColor="#666" value={title} onChangeText={setTitle} />
+          <TextInput testID="add-song-title" style={styles.input} placeholder="Song title" placeholderTextColor="#666" value={title} onChangeText={setTitle} />
         </View>
         <View style={styles.metaField}>
           <Text style={styles.label}>Artist</Text>
-          <TextInput style={styles.input} placeholder="Artist name" placeholderTextColor="#666" value={artist} onChangeText={setArtist} />
+          <TextInput testID="add-song-artist" style={styles.input} placeholder="Artist name" placeholderTextColor="#666" value={artist} onChangeText={setArtist} />
         </View>
       </View>
 
@@ -134,6 +172,7 @@ const AddSongScreen = ({ navigation }: any) => {
       {activeTab === 'text' ? (
         <View>
           <TextInput
+            testID="add-song-chord-text"
             style={styles.textArea}
             placeholder={'Paste chord sheet here…\n\nExample:\nG        G7       C        G\nAmazing grace how sweet the sound\nG        Em       A7       D\nThat saved a wretch like me'}
             placeholderTextColor="#555"
@@ -141,8 +180,23 @@ const AddSongScreen = ({ navigation }: any) => {
             value={chordText}
             onChangeText={(t) => { setChordText(t); setStatus(''); }}
           />
-          <TouchableOpacity style={styles.btn} onPress={handleAddFromText}>
+          <TouchableOpacity testID="add-song-submit" style={styles.btn} onPress={handleAddFromText}>
             <Text style={styles.btnText}>Add Song</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            testID="add-song-sync"
+            style={[styles.btn, styles.cloudBtn]}
+            onPress={handleAddAndSync}
+            disabled={cloudSyncing}
+          >
+            {cloudSyncing ? (
+              <View style={styles.loadingRow}>
+                <ActivityIndicator color="#121212" size="small" />
+                <Text style={[styles.btnText, { marginLeft: 8 }]}>Syncing…</Text>
+              </View>
+            ) : (
+              <Text style={styles.btnText}>☁️ Add & Sync to Cloud</Text>
+            )}
           </TouchableOpacity>
         </View>
       ) : (
@@ -207,6 +261,9 @@ const styles = StyleSheet.create({
   btn: {
     backgroundColor: '#4FC3F7', borderRadius: 12, paddingVertical: 16,
     alignItems: 'center', marginTop: 14,
+  },
+  cloudBtn: {
+    backgroundColor: '#66BB6A',
   },
   btnText: { color: '#121212', fontSize: 17, fontWeight: '700' },
   loadingRow: { flexDirection: 'row', alignItems: 'center' },

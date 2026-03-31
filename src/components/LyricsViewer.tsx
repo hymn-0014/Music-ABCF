@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { View, Text, ScrollView, StyleSheet } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, Platform } from 'react-native';
 import { ChordLyricLine, NotationMode, AccidentalPreference } from '../types';
 import { transposeLine, nashvilleLineFromChords } from '../utils/chordTranspose';
 
@@ -17,7 +17,10 @@ const LyricsViewer: React.FC<LyricsViewerProps> = ({
   lines, transpose, songKey, notation, accidental, autoScrollEnabled, autoScrollSpeed,
 }) => {
   const CHORD_COLOR = '#4FC3F7';
-  const CHORD_PATTERN = /(?:[A-G][#b]?(?:maj|min|m|dim|aug|sus|add)?\d*(?:\([^)]*\))?(?:\/[A-G][#b]?)?|[1-7][#b]?(?:maj|min|m|dim|aug|sus|add)?\d*(?:\([^)]*\))?(?:\/[1-7][#b]?)?)/g;
+  const SECTION_COLOR = '#66BB6A';
+  const SECTION_PATTERN = /^\[.*\]$/;
+  // Comprehensive chord pattern: handles standard chords (A-G), slash chords, compound suffixes, and Nashville numbers (including flats like b7)
+  const CHORD_PATTERN = /(?:[A-G][#b]?(?:maj|min|m|dim|aug|sus|add|M)?(?:\d+)?(?:(?:sus|add|aug|dim|maj|min|m|b|#)\d*)*(?:\([^)]*\))?(?:\/[A-G][#b]?)?|b?[1-7][#b]?(?:maj|min|m|dim|aug|sus|add|M)?(?:\d+)?(?:(?:sus|add|aug|dim|maj|min|m|b|#)\d*)*(?:\([^)]*\))?(?:\/b?[1-7][#b]?)?)/g;
 
   // Parse and render colored chords preserving original spacing
   const renderColoredChormLine = (chordLine: string): React.ReactNode[] => {
@@ -103,7 +106,7 @@ const LyricsViewer: React.FC<LyricsViewerProps> = ({
   return (
     <ScrollView
       ref={scrollRef}
-      style={styles.container}
+      style={[styles.container, Platform.OS === 'web' ? { overflow: 'auto' as any } : undefined]}
       contentContainerStyle={styles.contentContainer}
       scrollEnabled={true}
       showsVerticalScrollIndicator={true}
@@ -134,7 +137,13 @@ const LyricsViewer: React.FC<LyricsViewerProps> = ({
                 {renderColoredChormLine(displayChords)}
               </Text>
             ) : null}
-            <Text style={styles.lyricLine}>{line.lyrics}</Text>
+            {line.lyrics ? (
+              SECTION_PATTERN.test(line.lyrics.trim()) ? (
+                <Text style={styles.sectionLabel}>{line.lyrics}</Text>
+              ) : (
+                <Text style={styles.lyricLine}>{line.lyrics}</Text>
+              )
+            ) : null}
           </View>
         );
       })}
@@ -157,6 +166,7 @@ const styles = StyleSheet.create({
   lineBlock: { marginBottom: 6 },
   chordLineWrapper: { fontFamily: 'monospace', fontSize: 18, fontWeight: 'bold', color: '#4FC3F7' },
   chordLine: { fontFamily: 'monospace', fontSize: 18, fontWeight: 'bold', color: '#4FC3F7' },
+  sectionLabel: { fontFamily: 'monospace', fontSize: 18, fontWeight: 'bold', color: '#66BB6A', marginTop: 10, marginBottom: 2 },
   lyricLine: { fontFamily: 'monospace', fontSize: 18, color: '#E0E0E0', lineHeight: 26 },
 });
 

@@ -21,3 +21,14 @@ export interface Setlist {
 
 export type NotationMode = 'standard' | 'nashville';
 export type AccidentalPreference = 'sharp' | 'flat';
+
+export interface SyncResult {
+  songsUploaded: number;
+  songsDownloaded: number;
+  setlistsUploaded: number;
+  setlistsDownloaded: number;
+  overwritten: number;
+  skipped: number;
+}
+
+export type SyncConfirmFn = (title: string, message: string) => Promise<boolean>;

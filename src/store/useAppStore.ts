@@ -1,11 +1,15 @@
 import { create } from 'zustand';
-import { Song, Setlist, NotationMode, AccidentalPreference } from '../types';
+import { Song, Setlist, NotationMode, AccidentalPreference, SyncResult, SyncConfirmFn } from '../types';
 import { songs as defaultSongs, setlists as defaultSetlists } from '../data/mockData';
 import {
   syncSongsToFirestore,
   fetchSongsFromFirestore,
   syncSetlistsToFirestore,
   fetchSetlistsFromFirestore,
+  uploadSingleSong,
+  deleteSongFromFirestore,
+  uploadSingleSetlist,
+  deleteSetlistFromFirestore,
 } from '../services/firebaseService';
 
 interface AppState {
@@ -44,6 +48,8 @@ interface AppState {
   // cloud sync
   pullFromCloud: () => Promise<void>;
   pushToCloud: () => Promise<void>;
+  smartPushToCloud: (confirm: SyncConfirmFn) => Promise<SyncResult>;
+  smartPullFromCloud: (confirm: SyncConfirmFn) => Promise<SyncResult>;
 }
 
 const normalizeSong = (song: Song): Song => ({
@@ -157,7 +163,183 @@ const useAppStore = create<AppState>((set, get) => ({
       ]);
     } catch (e) {
       console.error('Cloud push failed:', e);
+      throw e;
     }
+  },
+
+  smartPushToCloud: async (confirmFn: SyncConfirmFn): Promise<SyncResult> => {
+    const { uid, songs, setlists } = get();
+    if (!uid) throw new Error('Not signed in');
+
+    const result: SyncResult = {
+      songsUploaded: 0, songsDownloaded: 0,
+      setlistsUploaded: 0, setlistsDownloaded: 0,
+      overwritten: 0, skipped: 0,
+    };
+
+    const [cloudSongs, cloudSetlists] = await Promise.all([
+      fetchSongsFromFirestore(uid),
+      fetchSetlistsFromFirestore(uid),
+    ]);
+
+    // Build cloud lookup by title+artist
+    const cloudSongMap = new Map<string, Song>();
+    for (const s of cloudSongs) {
+      cloudSongMap.set(`${s.title.trim().toLowerCase()}::${s.artist.trim().toLowerCase()}`, s);
+    }
+
+    for (const song of songs) {
+      const key = `${song.title.trim().toLowerCase()}::${song.artist.trim().toLowerCase()}`;
+      const cloudSong = cloudSongMap.get(key);
+
+      if (!cloudSong) {
+        await uploadSingleSong(uid, song);
+        result.songsUploaded++;
+      } else {
+        const linesMatch = JSON.stringify(cloudSong.lines) === JSON.stringify(song.lines);
+        const tempoMatch = cloudSong.tempo === song.tempo;
+        const keyMatch = cloudSong.key === song.key;
+        if (!linesMatch || !tempoMatch || !keyMatch) {
+          const shouldOverwrite = await confirmFn(
+            'Duplicate Song',
+            `"${song.title}" by ${song.artist} already exists in cloud with different content.\n\nOverwrite the cloud version with your local version?`,
+          );
+          if (shouldOverwrite) {
+            if (cloudSong.id !== song.id) {
+              await deleteSongFromFirestore(uid, cloudSong.id);
+            }
+            await uploadSingleSong(uid, song);
+            result.overwritten++;
+          } else {
+            result.skipped++;
+          }
+        }
+      }
+    }
+
+    // Setlists
+    const cloudSetlistMap = new Map<string, Setlist>();
+    for (const sl of cloudSetlists) {
+      cloudSetlistMap.set(sl.name.trim().toLowerCase(), sl);
+    }
+
+    for (const setlist of setlists) {
+      const key = setlist.name.trim().toLowerCase();
+      const cloudSetlist = cloudSetlistMap.get(key);
+
+      if (!cloudSetlist) {
+        await uploadSingleSetlist(uid, setlist);
+        result.setlistsUploaded++;
+      } else {
+        const songIdsMatch = JSON.stringify(cloudSetlist.songIds) === JSON.stringify(setlist.songIds);
+        if (!songIdsMatch) {
+          const shouldOverwrite = await confirmFn(
+            'Duplicate Setlist',
+            `Setlist "${setlist.name}" already exists in cloud with different songs.\n\nOverwrite the cloud version?`,
+          );
+          if (shouldOverwrite) {
+            if (cloudSetlist.id !== setlist.id) {
+              await deleteSetlistFromFirestore(uid, cloudSetlist.id);
+            }
+            await uploadSingleSetlist(uid, setlist);
+            result.overwritten++;
+          } else {
+            result.skipped++;
+          }
+        }
+      }
+    }
+
+    return result;
+  },
+
+  smartPullFromCloud: async (confirmFn: SyncConfirmFn): Promise<SyncResult> => {
+    const { uid } = get();
+    if (!uid) throw new Error('Not signed in');
+
+    const result: SyncResult = {
+      songsUploaded: 0, songsDownloaded: 0,
+      setlistsUploaded: 0, setlistsDownloaded: 0,
+      overwritten: 0, skipped: 0,
+    };
+
+    const [cloudSongs, cloudSetlists] = await Promise.all([
+      fetchSongsFromFirestore(uid),
+      fetchSetlistsFromFirestore(uid),
+    ]);
+
+    const { songs, setlists } = get();
+
+    // Build local lookup by title+artist
+    const localSongMap = new Map<string, Song>();
+    for (const s of songs) {
+      localSongMap.set(`${s.title.trim().toLowerCase()}::${s.artist.trim().toLowerCase()}`, s);
+    }
+
+    const newSongs = [...songs];
+
+    for (const cloudSong of cloudSongs) {
+      const key = `${cloudSong.title.trim().toLowerCase()}::${cloudSong.artist.trim().toLowerCase()}`;
+      const localSong = localSongMap.get(key);
+
+      if (!localSong) {
+        newSongs.push(normalizeSong(cloudSong));
+        result.songsDownloaded++;
+      } else {
+        const linesMatch = JSON.stringify(localSong.lines) === JSON.stringify(cloudSong.lines);
+        const tempoMatch = localSong.tempo === cloudSong.tempo;
+        const keyMatch = localSong.key === cloudSong.key;
+        if (!linesMatch || !tempoMatch || !keyMatch) {
+          const shouldOverwrite = await confirmFn(
+            'Duplicate Song',
+            `"${cloudSong.title}" by ${cloudSong.artist} exists locally with different content.\n\nOverwrite your local version with the cloud version?`,
+          );
+          if (shouldOverwrite) {
+            const idx = newSongs.findIndex((s) => s.id === localSong.id);
+            if (idx >= 0) newSongs[idx] = normalizeSong(cloudSong);
+            result.overwritten++;
+          } else {
+            result.skipped++;
+          }
+        }
+      }
+    }
+
+    // Setlists
+    const localSetlistMap = new Map<string, Setlist>();
+    for (const sl of setlists) {
+      localSetlistMap.set(sl.name.trim().toLowerCase(), sl);
+    }
+
+    const newSetlists = [...setlists];
+
+    for (const cloudSetlist of cloudSetlists) {
+      const key = cloudSetlist.name.trim().toLowerCase();
+      const localSetlist = localSetlistMap.get(key);
+
+      if (!localSetlist) {
+        newSetlists.push(cloudSetlist);
+        result.setlistsDownloaded++;
+      } else {
+        const songIdsMatch = JSON.stringify(localSetlist.songIds) === JSON.stringify(cloudSetlist.songIds);
+        if (!songIdsMatch) {
+          const shouldOverwrite = await confirmFn(
+            'Duplicate Setlist',
+            `Setlist "${cloudSetlist.name}" exists locally with different songs.\n\nOverwrite your local version with the cloud version?`,
+          );
+          if (shouldOverwrite) {
+            const idx = newSetlists.findIndex((sl) => sl.id === localSetlist.id);
+            if (idx >= 0) newSetlists[idx] = cloudSetlist;
+            result.overwritten++;
+          } else {
+            result.skipped++;
+          }
+        }
+      }
+    }
+
+    set({ songs: newSongs, setlists: newSetlists });
+    return result;
   },
 }));
 

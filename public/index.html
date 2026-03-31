@@ -19,9 +19,11 @@
             flex-direction: column;
         }
         /* Enable scrollbar visibility in scrollable areas */
-        [data-testid="lyrics-scroll"] > div,
-        [role="scrollbar"],
-        .r-overflow-scroll > div {
+        [data-testid="lyrics-scroll"] {
+            overflow-y: auto !important;
+            -webkit-overflow-scrolling: touch;
+        }
+        [data-testid="lyrics-scroll"] > div {
             overflow-y: auto !important;
             -webkit-overflow-scrolling: touch;
         }
