@@ -1,9 +1,31 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Image, Platform } from 'react-native';
 
 const HomeScreen = ({ navigation }: any) => {
+  const getImageSource = (filename: string) => {
+    if (Platform.OS === 'web') {
+      return { uri: `/assets/logos/${filename}` };
+    }
+    return require(`../../public/assets/logos/${filename}`);
+  };
+
   return (
     <View style={styles.container}>
+      <View style={styles.logoContainer}>
+        <View style={styles.logoRow}>
+          <Image
+            source={getImageSource('bible-logo.png')}
+            style={styles.bibleLogo}
+            alt="Bible Logo"
+          />
+          <Image
+            source={getImageSource('music-ministry-logo.png')}
+            style={styles.musicLogo}
+            alt="Music Ministry Logo"
+          />
+        </View>
+      </View>
+
       <Text style={styles.title}>Music ABCF</Text>
       <Text style={styles.subtitle}>Chords · Lyrics · Setlists</Text>
 
@@ -22,6 +44,16 @@ const HomeScreen = ({ navigation }: any) => {
 
 const styles = StyleSheet.create({
   container: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24, backgroundColor: '#121212' },
+  logoContainer: { marginBottom: 32, alignItems: 'center' },
+  logoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+    justifyContent: 'center',
+    flexWrap: 'wrap',
+  },
+  bibleLogo: { width: 60, height: 60, resizeMode: 'contain' },
+  musicLogo: { width: 120, height: 45, resizeMode: 'contain' },
   title: { fontSize: 32, fontWeight: 'bold', marginBottom: 4, color: '#FFFFFF' },
   subtitle: { fontSize: 16, marginBottom: 32, opacity: 0.7, color: '#FFFFFF' },
   btn: {

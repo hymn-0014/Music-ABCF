@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { NavigationContainer, DefaultTheme } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { ActivityIndicator, View, Text, Platform } from 'react-native';
+import { ActivityIndicator, View, Text, Platform, Image } from 'react-native';
 import SongLibraryScreen from './screens/SongLibraryScreen';
 import SetlistScreen from './screens/SetlistScreen';
 import ViewerScreen from './screens/ViewerScreen';
@@ -34,11 +34,31 @@ const TabIcon = ({ label, focused }: { label: string; focused: boolean }) => (
   <Text style={{ fontSize: 11, color: focused ? '#4FC3F7' : '#888', marginTop: 2 }}>{label}</Text>
 );
 
+const LogoHeader = () => {
+  const getImageSource = (filename: string) => {
+    if (Platform.OS === 'web') {
+      return { uri: `/assets/logos/${filename}` };
+    }
+    return require(`../public/assets/logos/${filename}`);
+  };
+
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12 }}>
+      <Image
+        source={getImageSource('music-ministry-logo.png')}
+        style={{ width: 80, height: 30, resizeMode: 'contain' }}
+        alt="Music Ministry Logo"
+      />
+    </View>
+  );
+};
+
 function MainTabs() {
   return (
     <Tab.Navigator
       screenOptions={{
         headerStyle: { backgroundColor: '#1E1E1E', shadowColor: '#000' },
+        headerTitle: () => <LogoHeader />,
         headerTintColor: '#FFFFFF',
         headerTitleStyle: { fontWeight: '700', fontSize: 18 },
         tabBarStyle: {
