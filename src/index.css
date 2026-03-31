@@ -1233,16 +1233,294 @@ a { color: #4FC3F7; text-decoration: none; }
   white-space: nowrap;
 }
 
-/* Light mode overrides for mod history */
-html:not(.dark) .mod-info { color: #666; }
-html:not(.dark) .mod-label { color: #333; }
-html:not(.dark) .mod-date { color: #888; }
-html:not(.dark) .mod-history { background: rgba(0,0,0,0.03); }
-html:not(.dark) .mod-history-title { color: #333; }
+/* ============================================================
+   LIGHT THEME  —  html:not(.dark)
+   ============================================================
+   Design tokens
+     --bg-page  : #F0F2F5   page / scroll area
+     --bg-card  : #FFFFFF   cards, headers, modals
+     --bg-hover : #E8ECF1   hover highlight
+     --border   : #D1D5DB   borders & dividers
+     --text-primary   : #111827   headings, titles, lyrics
+     --text-secondary : #374151   body copy, labels
+     --text-muted     : #6B7280   hints, placeholders, meta
+     --accent         : #0369A1   chord text, active tab, links
+     --accent-bg      : #E0F2FE   key badge bg, active subtle bg
+   ============================================================ */
+
+/* --- 1. Root & scrollbars ---------------------------------- */
+html:not(.dark),
+html:not(.dark) body {
+  background-color: #F0F2F5;
+  color: #111827;
+}
+
+html:not(.dark) ::-webkit-scrollbar-track { background: #E5E7EB; }
+html:not(.dark) ::-webkit-scrollbar-thumb { background-color: #0369A1; border-color: #E5E7EB; }
+html:not(.dark) ::-webkit-scrollbar-thumb:hover { background-color: #0284C7; }
+html:not(.dark) * { scrollbar-color: #0369A1 #E5E7EB; }
+
+/* --- 2. Page-level backgrounds ----------------------------- */
+html:not(.dark) .loading-screen,
+html:not(.dark) .app-main,
+html:not(.dark) .screen,
+html:not(.dark) .song-list,
+html:not(.dark) .card-list,
+html:not(.dark) .setlist-manager,
+html:not(.dark) .lyrics-container,
+html:not(.dark) .add-song-screen,
+html:not(.dark) .settings-screen {
+  background: #F0F2F5;
+  color: #111827;
+}
+
+/* --- 3. Cards & elevated surfaces -------------------------- */
+html:not(.dark) .app-header,
+html:not(.dark) .tab-bar,
+html:not(.dark) .viewer-header,
+html:not(.dark) .toolbar,
+html:not(.dark) .screen-header,
+html:not(.dark) .playback-card,
+html:not(.dark) .settings-card,
+html:not(.dark) .song-card,
+html:not(.dark) .status-box,
+html:not(.dark) .picker-modal,
+html:not(.dark) .login-card {
+  background: #FFFFFF;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+}
+
+/* --- 4. Borders & dividers --------------------------------- */
+html:not(.dark) .app-header,
+html:not(.dark) .tab-bar,
+html:not(.dark) .viewer-header,
+html:not(.dark) .toolbar,
+html:not(.dark) .screen-header,
+html:not(.dark) .picker-header,
+html:not(.dark) .playback-card,
+html:not(.dark) .settings-divider,
+html:not(.dark) .playback-divider,
+html:not(.dark) .song-card,
+html:not(.dark) .picker-item,
+html:not(.dark) .setlist-row,
+html:not(.dark) .drop-zone {
+  border-color: #D1D5DB;
+}
+
+/* --- 5. Primary text — headings, titles, lyrics ------------ */
+html:not(.dark) .header-title,
+html:not(.dark) .screen-title,
+html:not(.dark) .viewer-title,
+html:not(.dark) .settings-section-title,
+html:not(.dark) .setlist-heading,
+html:not(.dark) .picker-header h3,
+html:not(.dark) .playback-title,
+html:not(.dark) .playback-label,
+html:not(.dark) .setlist-song-title,
+html:not(.dark) .picker-item-name,
+html:not(.dark) .login-title,
+html:not(.dark) .empty-text {
+  color: #111827;
+}
+
+html:not(.dark) .lyric-line,
+html:not(.dark) .toolbar-speed-value,
+html:not(.dark) .transpose-level,
+html:not(.dark) .notation-label,
+html:not(.dark) .stepper-value {
+  color: #1E293B;
+}
+
+/* --- 6. Secondary text — body copy ------------------------- */
+html:not(.dark) .song-title,
+html:not(.dark) .tab-label,
+html:not(.dark) .mod-label,
+html:not(.dark) .mod-history-title {
+  color: #374151;
+}
+
+/* --- 7. Muted text — meta, hints, placeholders ------------- */
+html:not(.dark) .tab-item { color: #6B7280; }
+
+html:not(.dark) .input-field::placeholder,
+html:not(.dark) .search-input::placeholder,
+html:not(.dark) .setlist-filter::placeholder,
+html:not(.dark) .picker-item-detail,
+html:not(.dark) .empty-hint,
+html:not(.dark) .hint,
+html:not(.dark) .sync-info,
+html:not(.dark) .settings-hint,
+html:not(.dark) .nav-counter,
+html:not(.dark) .viewer-artist,
+html:not(.dark) .song-artist,
+html:not(.dark) .section-subtitle,
+html:not(.dark) .field-label,
+html:not(.dark) .status-text,
+html:not(.dark) .tempo-hint,
+html:not(.dark) .arrow,
+html:not(.dark) .picker-empty,
+html:not(.dark) .login-subtitle,
+html:not(.dark) .mod-info,
+html:not(.dark) .mod-date,
+html:not(.dark) .mod-user,
+html:not(.dark) .mod-time,
+html:not(.dark) .edit-btn {
+  color: #6B7280;
+}
+
+/* --- 8. Accent — chord text, active items, links ----------- */
+html:not(.dark) .chord-line {
+  color: #0369A1;
+}
+
+html:not(.dark) .tab-item.active,
+html:not(.dark) .edit-btn:hover,
+html:not(.dark) .text-btn,
+html:not(.dark) .setlist-action,
+html:not(.dark) .viewer-setlist-info,
+html:not(.dark) .back-btn,
+html:not(.dark) .login-toggle,
+html:not(.dark) a {
+  color: #0369A1;
+}
+
+html:not(.dark) .key-badge {
+  background: #E0F2FE;
+  color: #0369A1;
+}
+
+html:not(.dark) .section-label {
+  color: #B45309;
+}
+
+/* --- 9. Inputs & controls ---------------------------------- */
+html:not(.dark) .input-field,
+html:not(.dark) .search-input,
+html:not(.dark) .setlist-filter,
+html:not(.dark) .chord-textarea,
+html:not(.dark) .login-input {
+  background: #FFFFFF;
+  color: #111827;
+  border-color: #D1D5DB;
+}
+html:not(.dark) .input-field:focus,
+html:not(.dark) .search-input:focus,
+html:not(.dark) .setlist-filter:focus,
+html:not(.dark) .chord-textarea:focus,
+html:not(.dark) .login-input:focus {
+  border-color: #0369A1;
+}
+
+html:not(.dark) .tab-btn,
+html:not(.dark) .notation-pill,
+html:not(.dark) .toolbar-btn,
+html:not(.dark) .toggle-pill,
+html:not(.dark) .btn-outline-small {
+  background: #FFFFFF;
+  color: #374151;
+  border-color: #D1D5DB;
+}
+
+html:not(.dark) .tab-btn.active,
+html:not(.dark) .toolbar-btn.active,
+html:not(.dark) .toggle-pill.active {
+  background: #0369A1;
+  color: #FFFFFF;
+  border-color: #0369A1;
+}
+
+html:not(.dark) .toggle-slider { background: #D1D5DB; }
+html:not(.dark) .toggle-switch input:checked + .toggle-slider { background: #0369A1; }
+
+/* --- 10. Buttons ------------------------------------------- */
+html:not(.dark) .btn-primary,
+html:not(.dark) .fab,
+html:not(.dark) .round-btn {
+  background: #0369A1;
+  color: #FFFFFF;
+  box-shadow: 0 2px 8px rgba(3,105,161,0.25);
+}
+html:not(.dark) .btn-primary:hover,
+html:not(.dark) .fab:hover { opacity: 0.9; }
+
+html:not(.dark) .login-btn.primary {
+  background: #0369A1;
+  color: #FFFFFF;
+}
+html:not(.dark) .login-btn.google {
+  background: #FFFFFF;
+  color: #374151;
+  border: 1px solid #D1D5DB;
+}
+
+/* --- 11. Hover states -------------------------------------- */
+html:not(.dark) .song-card:hover,
+html:not(.dark) .settings-sync-row:hover,
+html:not(.dark) .picker-item:hover,
+html:not(.dark) .setlist-add-row:hover,
+html:not(.dark) .picker-close:hover,
+html:not(.dark) .btn-outline-small:hover,
+html:not(.dark) .toolbar-btn:hover {
+  background: #E8ECF1;
+}
+
+html:not(.dark) .line-block-edit:hover {
+  background: rgba(3, 105, 161, 0.06);
+}
+
+html:not(.dark) .chord-to-lyric {
+  color: #374151;
+  border-color: #9CA3AF;
+  background: rgba(156, 163, 175, 0.12);
+}
+html:not(.dark) .chord-to-lyric:hover {
+  background: rgba(156, 163, 175, 0.22);
+}
+
+html:not(.dark) .lyric-to-chord {
+  color: #0369A1;
+  border-color: #0369A1;
+  background: rgba(3, 105, 161, 0.08);
+}
+html:not(.dark) .lyric-to-chord:hover {
+  background: rgba(3, 105, 161, 0.18);
+}
+
+/* --- 12. Overlays & login ---------------------------------- */
+html:not(.dark) .picker-overlay {
+  background: rgba(17, 24, 39, 0.3);
+}
+
+html:not(.dark) .login-page {
+  background: linear-gradient(135deg, #E0F2FE 0%, #BFDBFE 100%);
+}
+html:not(.dark) .login-card {
+  box-shadow: 0 8px 32px rgba(0,0,0,0.10);
+}
+html:not(.dark) .login-divider-line { background: #D1D5DB; }
+html:not(.dark) .login-divider-text { color: #6B7280; }
+html:not(.dark) .login-error { background: #FEE2E2; color: #B91C1C; }
+
+/* --- 13. Spinners ------------------------------------------ */
+html:not(.dark) .spinner { border-color: #D1D5DB; border-top-color: #0369A1; }
+html:not(.dark) .spinner-small { border-color: #D1D5DB; border-top-color: #0369A1; }
+
+/* --- 14. Modification history ------------------------------ */
+html:not(.dark) .mod-history { background: rgba(0,0,0,0.02); }
 html:not(.dark) .mod-history-item { border-bottom-color: rgba(0,0,0,0.06); }
-html:not(.dark) .mod-action { background: rgba(99,102,241,0.1); }
-html:not(.dark) .mod-user { color: #555; }
-html:not(.dark) .mod-time { color: #999; }
+html:not(.dark) .mod-action { background: rgba(3,105,161,0.08); color: #0369A1; }
+
+/* --- 15. Drop zone ----------------------------------------- */
+html:not(.dark) .drop-zone { border-color: #D1D5DB; color: #6B7280; }
+html:not(.dark) .drop-zone.active { border-color: #0369A1; background: rgba(3,105,161,0.04); }
+
+/* --- 16. Sync messages ------------------------------------- */
+html:not(.dark) .sync-msg { color: #15803D; }
+html:not(.dark) .sync-msg.error { color: #B91C1C; }
+html:not(.dark) .sync-msg.warning { color: #A16207; }
+html:not(.dark) .picker-msg { color: #15803D; }
+html:not(.dark) .picker-msg.error { color: #B91C1C; }
+html:not(.dark) .picker-msg.warning { color: #A16207; }
 
 /* ===== Toggle switch ===== */
 .toggle-switch {

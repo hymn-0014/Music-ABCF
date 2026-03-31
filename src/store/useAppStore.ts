@@ -22,6 +22,28 @@ import {
   savePersonalSingleSetlist,
 } from '../services/firebaseService';
 
+const THEME_PREF_KEY = 'musicabcf-theme-dark';
+
+const getInitialDarkMode = (): boolean => {
+  if (typeof window === 'undefined') return true;
+  try {
+    const stored = window.localStorage.getItem(THEME_PREF_KEY);
+    if (stored === null) return true;
+    return stored === 'true';
+  } catch {
+    return true;
+  }
+};
+
+const persistDarkMode = (enabled: boolean): void => {
+  if (typeof window === 'undefined') return;
+  try {
+    window.localStorage.setItem(THEME_PREF_KEY, String(enabled));
+  } catch {
+    // Ignore storage write failures and keep in-memory preference.
+  }
+};
+
 interface AppState {
   // auth
   uid: string | null;
@@ -112,7 +134,7 @@ const useAppStore = create<AppState>((set, get) => ({
   metronomeEnabled: false,
   autoScrollEnabled: false,
   autoScrollSpeed: 30,
-  darkMode: true,
+  darkMode: getInitialDarkMode(),
   setSongs: (songs) => {
     set({ songs: songs.map(normalizeSong) });
     // Auto-sync to personal cloud
@@ -182,7 +204,11 @@ const useAppStore = create<AppState>((set, get) => ({
   setMetronomeEnabled: (enabled) => set({ metronomeEnabled: enabled }),
   setAutoScrollEnabled: (enabled) => set({ autoScrollEnabled: enabled }),
   setAutoScrollSpeed: (speed) => set({ autoScrollSpeed: Math.min(120, Math.max(10, Math.round(speed))) }),
-  toggleDarkMode: () => set((s) => ({ darkMode: !s.darkMode })),
+  toggleDarkMode: () => set((s) => {
+    const next = !s.darkMode;
+    persistDarkMode(next);
+    return { darkMode: next };
+  }),
 
   /**
    * Tier 1: Restore personal data from users/{uid}/… on login.

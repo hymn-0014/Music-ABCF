@@ -47,6 +47,7 @@ function TabLayout() {
 export default function App() {
   const [loading, setLoading] = useState(true);
   const uid = useAppStore((s) => s.uid);
+  const darkMode = useAppStore((s) => s.darkMode);
   const setUid = useAppStore((s) => s.setUid);
   const restorePersonalData = useAppStore((s) => s.restorePersonalData);
 
@@ -61,6 +62,11 @@ export default function App() {
     });
     return unsubscribe;
   }, []);
+
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', darkMode);
+    document.body.style.colorScheme = darkMode ? 'dark' : 'light';
+  }, [darkMode]);
 
   if (loading) {
     return (
