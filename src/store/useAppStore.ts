@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { Song, Setlist, NotationMode, AccidentalPreference, SyncResult, SyncConfirmFn } from '../types';
+import { Song, Setlist, ModificationEntry, NotationMode, AccidentalPreference, SyncResult, SyncConfirmFn } from '../types';
 import { songs as defaultSongs, setlists as defaultSetlists } from '../data/mockData';
 import {
   syncSongsToFirestore,
@@ -10,12 +10,14 @@ import {
   deleteSongFromFirestore,
   uploadSingleSetlist,
   deleteSetlistFromFirestore,
+  fetchSongsByIds,
 } from '../services/firebaseService';
 
 interface AppState {
   // auth
   uid: string | null;
-  setUid: (uid: string | null) => void;
+  userEmail: string | null;
+  setUid: (uid: string | null, email?: string | null) => void;
   // data
   songs: Song[];
   setlists: Setlist[];
@@ -50,6 +52,10 @@ interface AppState {
   pushToCloud: () => Promise<void>;
   smartPushToCloud: (confirm: SyncConfirmFn) => Promise<SyncResult>;
   smartPullFromCloud: (confirm: SyncConfirmFn) => Promise<SyncResult>;
+  // setlist-level sync
+  fetchCloudSetlists: () => Promise<Setlist[]>;
+  uploadSetlist: (setlistId: string) => Promise<{ songsUploaded: number }>;
+  downloadSetlist: (setlist: Setlist) => Promise<{ songsDownloaded: number }>;
 }
 
 const normalizeSong = (song: Song): Song => ({
@@ -74,26 +80,10 @@ const songsContentEqual = (a: Song, b: Song): boolean => {
   return stableJSON(a.lines) === stableJSON(b.lines);
 };
 
-const mergeSongs = (baseSongs: Song[], incomingSongs: Song[]): Song[] => {
-  const merged = [...baseSongs.map(normalizeSong)];
-  const existingKeys = new Set(
-    merged.map((song) => `${song.title.trim().toLowerCase()}::${song.artist.trim().toLowerCase()}`),
-  );
-
-  incomingSongs.map(normalizeSong).forEach((song) => {
-    const key = `${song.title.trim().toLowerCase()}::${song.artist.trim().toLowerCase()}`;
-    if (!existingKeys.has(key)) {
-      merged.push(song);
-      existingKeys.add(key);
-    }
-  });
-
-  return merged;
-};
-
 const useAppStore = create<AppState>((set, get) => ({
   uid: null,
-  setUid: (uid) => set({ uid }),
+  userEmail: null,
+  setUid: (uid, email) => set({ uid, userEmail: email ?? null }),
   songs: defaultSongs.map(normalizeSong),
   setlists: defaultSetlists,
   currentSongId: null,
@@ -106,19 +96,30 @@ const useAppStore = create<AppState>((set, get) => ({
   autoScrollEnabled: false,
   autoScrollSpeed: 30,
   darkMode: true,
-  setSongs: (songs) => set({ songs: mergeSongs(defaultSongs, songs) }),
-  setSetlists: (setlists) => set({ setlists }),
+  setSongs: (songs) => set({ songs: songs.map(normalizeSong) }),
+  setSetlists: (setlists) => {
+    set({ setlists });
+    const { uid } = get();
+    if (uid) void syncSetlistsToFirestore(uid, setlists).catch(e => console.error('Setlist push failed:', e));
+  },
   updateSong: (id, updates) => {
-    const { songs } = get();
-    set({ songs: songs.map((s) => (s.id === id ? { ...s, ...updates } : s)) });
+    const { songs, userEmail } = get();
+    const now = new Date().toISOString();
+    const email = userEmail || 'unknown';
+    set({ songs: songs.map((s) => {
+      if (s.id !== id) return s;
+      const entry: ModificationEntry = { userEmail: email, action: 'edited', timestamp: now };
+      return { ...s, ...updates, lastModifiedBy: email, lastModifiedAt: now, modificationHistory: [...(s.modificationHistory || []), entry] };
+    }) });
     void get().pushToCloud();
   },
   deleteSong: (id) => {
-    const { songs, currentSongId } = get();
+    const { songs, currentSongId, uid } = get();
     set({
       songs: songs.filter((s) => s.id !== id),
       currentSongId: currentSongId === id ? null : currentSongId,
     });
+    if (uid) void deleteSongFromFirestore(uid, id).catch(e => console.error('Cloud delete failed:', e));
     void get().pushToCloud();
   },
   setCurrentSongId: (id) => {
@@ -163,7 +164,7 @@ const useAppStore = create<AppState>((set, get) => ({
         fetchSongsFromFirestore(uid),
         fetchSetlistsFromFirestore(uid),
       ]);
-      if (songs.length > 0) set({ songs: mergeSongs(defaultSongs, songs) });
+      if (songs.length > 0) set({ songs: songs.map(normalizeSong) });
       if (setlists.length > 0) set({ setlists });
     } catch (e) {
       console.error('Cloud pull failed:', e);
@@ -291,6 +292,7 @@ const useAppStore = create<AppState>((set, get) => ({
     }
 
     const newSongs = [...songs];
+    const idRemaps = new Map<string, string>(); // old local ID → new cloud ID
 
     for (const cloudSong of cloudSongs) {
       const key = `${cloudSong.title.trim().toLowerCase()}::${cloudSong.artist.trim().toLowerCase()}`;
@@ -308,10 +310,16 @@ const useAppStore = create<AppState>((set, get) => ({
           if (shouldOverwrite) {
             const idx = newSongs.findIndex((s) => s.id === localSong.id);
             if (idx >= 0) newSongs[idx] = normalizeSong(cloudSong);
+            if (localSong.id !== cloudSong.id) idRemaps.set(localSong.id, cloudSong.id);
             result.overwritten++;
           } else {
             result.skipped++;
           }
+        } else if (localSong.id !== cloudSong.id) {
+          // Content matches but IDs differ — align to cloud ID for setlist consistency
+          const idx = newSongs.findIndex((s) => s.id === localSong.id);
+          if (idx >= 0) newSongs[idx] = { ...newSongs[idx], id: cloudSong.id };
+          idRemaps.set(localSong.id, cloudSong.id);
         }
       }
     }
@@ -349,9 +357,98 @@ const useAppStore = create<AppState>((set, get) => ({
       }
     }
 
+    // Remap song IDs in setlists so they reference the correct (cloud) IDs
+    if (idRemaps.size > 0) {
+      for (let i = 0; i < newSetlists.length; i++) {
+        const remapped = newSetlists[i].songIds.map((id) => idRemaps.get(id) ?? id);
+        if (remapped.some((id, j) => id !== newSetlists[i].songIds[j])) {
+          newSetlists[i] = { ...newSetlists[i], songIds: remapped };
+        }
+      }
+    }
+
     set({ songs: newSongs, setlists: newSetlists });
     return result;
+  },
+
+  fetchCloudSetlists: async (): Promise<Setlist[]> => {
+    const { uid } = get();
+    if (!uid) throw new Error('Not signed in');
+    return fetchSetlistsFromFirestore(uid);
+  },
+
+  uploadSetlist: async (setlistId: string): Promise<{ songsUploaded: number }> => {
+    const { uid, songs, setlists } = get();
+    if (!uid) throw new Error('Not signed in');
+
+    const setlist = setlists.find((sl) => sl.id === setlistId);
+    if (!setlist) throw new Error('Setlist not found');
+
+    // Upload the setlist itself
+    await uploadSingleSetlist(uid, setlist);
+
+    // Check which songs in the setlist are missing from cloud
+    const cloudSongs = await fetchSongsFromFirestore(uid);
+    const cloudSongIds = new Set(cloudSongs.map((s) => s.id));
+    const cloudSongKeys = new Set(
+      cloudSongs.map((s) => `${s.title.trim().toLowerCase()}::${s.artist.trim().toLowerCase()}`)
+    );
+
+    let songsUploaded = 0;
+    for (const songId of setlist.songIds) {
+      if (cloudSongIds.has(songId)) continue;
+      const localSong = songs.find((s) => s.id === songId);
+      if (!localSong) continue;
+      const key = `${localSong.title.trim().toLowerCase()}::${localSong.artist.trim().toLowerCase()}`;
+      if (cloudSongKeys.has(key)) continue; // same song by title+artist already in cloud
+      await uploadSingleSong(uid, localSong);
+      songsUploaded++;
+    }
+
+    return { songsUploaded };
+  },
+
+  downloadSetlist: async (cloudSetlist: Setlist): Promise<{ songsDownloaded: number }> => {
+    const { uid, songs, setlists } = get();
+    if (!uid) throw new Error('Not signed in');
+
+    // Add or replace the setlist locally
+    const existingIdx = setlists.findIndex((sl) => sl.id === cloudSetlist.id);
+    const newSetlists = [...setlists];
+    if (existingIdx >= 0) {
+      newSetlists[existingIdx] = cloudSetlist;
+    } else {
+      newSetlists.push(cloudSetlist);
+    }
+
+    // Download songs referenced in the setlist that we don't have locally
+    const localSongIds = new Set(songs.map((s) => s.id));
+    const localSongKeys = new Set(
+      songs.map((s) => `${s.title.trim().toLowerCase()}::${s.artist.trim().toLowerCase()}`)
+    );
+    const missingSongIds = cloudSetlist.songIds.filter((id) => !localSongIds.has(id));
+
+    let songsDownloaded = 0;
+    const newSongs = [...songs];
+
+    if (missingSongIds.length > 0) {
+      const cloudSongs = await fetchSongsByIds(uid, missingSongIds);
+      for (const cs of cloudSongs) {
+        const key = `${cs.title.trim().toLowerCase()}::${cs.artist.trim().toLowerCase()}`;
+        if (localSongKeys.has(key)) continue; // already have by title+artist
+        newSongs.push(normalizeSong(cs));
+        songsDownloaded++;
+      }
+    }
+
+    set({ songs: newSongs, setlists: newSetlists });
+    return { songsDownloaded };
   },
 }));
 
 export default useAppStore;
+
+// Expose store for E2E testing
+if (typeof window !== 'undefined') {
+  (window as unknown as Record<string, unknown>).__appStore = useAppStore;
+}

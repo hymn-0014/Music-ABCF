@@ -3,6 +3,12 @@ export interface ChordLyricLine {
   lyrics: string; // the lyric text
 }
 
+export interface ModificationEntry {
+  userEmail: string;
+  action: string; // e.g. "created", "edited", "added song", "removed song", "reordered"
+  timestamp: string; // ISO date
+}
+
 export interface Song {
   id: string;
   title: string;
@@ -10,6 +16,9 @@ export interface Song {
   key: string; // original key, e.g. "G"
   tempo: number;
   lines: ChordLyricLine[];
+  lastModifiedBy?: string; // email of last user who modified
+  lastModifiedAt?: string; // ISO date
+  modificationHistory?: ModificationEntry[];
 }
 
 export interface Setlist {
@@ -17,6 +26,9 @@ export interface Setlist {
   name: string;
   songIds: string[];
   createdAt: string; // ISO date
+  lastModifiedBy?: string;
+  lastModifiedAt?: string;
+  modificationHistory?: ModificationEntry[];
 }
 
 export type NotationMode = 'standard' | 'nashville';

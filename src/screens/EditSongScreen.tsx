@@ -103,6 +103,28 @@ const EditSongScreen = () => {
         <button className="btn-danger-outlined full-width" onClick={handleDelete}>Delete Song</button>
 
         {status && <div className="status-box"><p className="status-text">{status}</p></div>}
+
+        {/* Modification History */}
+        {song.lastModifiedBy && (
+          <div className="mod-info">
+            <span className="mod-label">Last modified by:</span> {song.lastModifiedBy}
+            {song.lastModifiedAt && <span className="mod-date"> — {new Date(song.lastModifiedAt).toLocaleString()}</span>}
+          </div>
+        )}
+        {song.modificationHistory && song.modificationHistory.length > 0 && (
+          <div className="mod-history">
+            <h4 className="mod-history-title">Modification History</h4>
+            <ul className="mod-history-list">
+              {[...song.modificationHistory].reverse().map((entry, i) => (
+                <li key={i} className="mod-history-item">
+                  <span className="mod-action">{entry.action}</span>
+                  <span className="mod-user">{entry.userEmail}</span>
+                  <span className="mod-time">{new Date(entry.timestamp).toLocaleString()}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
       </div>
     </div>
   );

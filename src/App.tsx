@@ -52,7 +52,7 @@ export default function App() {
 
   useEffect(() => {
     const unsubscribe = onAuthChange(async (user) => {
-      setUid(user?.uid ?? null);
+      setUid(user?.uid ?? null, user?.email ?? null);
       if (user) {
         await pullFromCloud();
       }

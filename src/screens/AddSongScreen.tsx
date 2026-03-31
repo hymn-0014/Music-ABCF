@@ -3,12 +3,14 @@ import { useNavigate } from 'react-router-dom';
 import useAppStore from '../store/useAppStore';
 import { parseChordsFromText, fetchChordsFromUrl } from '../services/chordExtractor';
 import { uploadSingleSong } from '../services/firebaseService';
+import { ModificationEntry } from '../types';
 
 const AddSongScreen = () => {
   const navigate = useNavigate();
   const songs = useAppStore((s) => s.songs);
   const setSongs = useAppStore((s) => s.setSongs);
   const uid = useAppStore((s) => s.uid);
+  const userEmail = useAppStore((s) => s.userEmail);
 
   const [title, setTitle] = useState('');
   const [artist, setArtist] = useState('');
@@ -31,7 +33,10 @@ const AddSongScreen = () => {
       setStatus('Could not parse chords. Use alternating chord/lyric lines:\n\nG   C   G\nAmazing grace how sweet');
       return;
     }
-    const newSong = { ...result, id: `song-${Date.now()}`, title: title || result.title, artist: artist || result.artist, tempo: parsedTempo };
+    const now = new Date().toISOString();
+    const email = userEmail || 'unknown';
+    const entry: ModificationEntry = { userEmail: email, action: 'created', timestamp: now };
+    const newSong = { ...result, id: `song-${Date.now()}`, title: title || result.title, artist: artist || result.artist, tempo: parsedTempo, lastModifiedBy: email, lastModifiedAt: now, modificationHistory: [entry] };
     setSongs([...songs, newSong]);
     if (uid) uploadSingleSong(uid, newSong).catch(console.error);
     window.alert(`"${newSong.title}" added!`);
@@ -45,7 +50,10 @@ const AddSongScreen = () => {
       setStatus('Could not parse chords. Use alternating chord/lyric lines:\n\nG   C   G\nAmazing grace how sweet');
       return;
     }
-    const newSong = { ...result, id: `song-${Date.now()}`, title: title || result.title, artist: artist || result.artist, tempo: parsedTempo };
+    const syncNow = new Date().toISOString();
+    const syncEmail = userEmail || 'unknown';
+    const syncEntry: ModificationEntry = { userEmail: syncEmail, action: 'created', timestamp: syncNow };
+    const newSong = { ...result, id: `song-${Date.now()}`, title: title || result.title, artist: artist || result.artist, tempo: parsedTempo, lastModifiedBy: syncEmail, lastModifiedAt: syncNow, modificationHistory: [syncEntry] };
     setSongs([...songs, newSong]);
     setCloudSyncing(true);
     try {
@@ -69,7 +77,10 @@ const AddSongScreen = () => {
       if (!result || result.lines.length === 0) {
         setStatus('Could not parse chords from file.'); return;
       }
-      const newSong = { ...result, id: `song-${Date.now()}`, title: title || result.title, artist: artist || result.artist, tempo: parsedTempo };
+      const fileNow = new Date().toISOString();
+      const fileEmail = userEmail || 'unknown';
+      const fileEntry: ModificationEntry = { userEmail: fileEmail, action: 'created', timestamp: fileNow };
+      const newSong = { ...result, id: `song-${Date.now()}`, title: title || result.title, artist: artist || result.artist, tempo: parsedTempo, lastModifiedBy: fileEmail, lastModifiedAt: fileNow, modificationHistory: [fileEntry] };
       setSongs([...songs, newSong]);
       if (uid) { try { await uploadSingleSong(uid, newSong); } catch { /* fallback */ } }
       window.alert(`"${newSong.title}" added!`);
@@ -96,7 +107,10 @@ const AddSongScreen = () => {
       if (!result || result.lines.length === 0) {
         setStatus('Could not extract chords from that URL.\n\nTIP: Copy the chord text and use the "Paste Text" tab.'); return;
       }
-      const newSong = { ...result, id: `song-${Date.now()}`, title: title || result.title, artist: artist || result.artist, tempo: parsedTempo };
+      const urlNow = new Date().toISOString();
+      const urlEmail = userEmail || 'unknown';
+      const urlEntry: ModificationEntry = { userEmail: urlEmail, action: 'created', timestamp: urlNow };
+      const newSong = { ...result, id: `song-${Date.now()}`, title: title || result.title, artist: artist || result.artist, tempo: parsedTempo, lastModifiedBy: urlEmail, lastModifiedAt: urlNow, modificationHistory: [urlEntry] };
       setSongs([...songs, newSong]);
       if (uid) { try { await uploadSingleSong(uid, newSong); } catch { /* fallback */ } }
       window.alert(`"${newSong.title}" added!`);

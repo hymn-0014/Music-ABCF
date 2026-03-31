@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import useAppStore from '../store/useAppStore';
 import { signOut } from '../services/authService';
-import { SyncConfirmFn, SyncResult } from '../types';
+import { Setlist, SyncConfirmFn, SyncResult } from '../types';
 
 const webConfirm: SyncConfirmFn = async (title: string, message: string): Promise<boolean> => {
   return window.confirm(`${title}\n\n${message}`);
@@ -31,8 +31,17 @@ const SettingsScreen = () => {
   const smartPullFromCloud = useAppStore((s) => s.smartPullFromCloud);
   const songs = useAppStore((s) => s.songs);
   const setlists = useAppStore((s) => s.setlists);
+  const fetchCloudSetlists = useAppStore((s) => s.fetchCloudSetlists);
+  const uploadSetlist = useAppStore((s) => s.uploadSetlist);
+  const downloadSetlist = useAppStore((s) => s.downloadSetlist);
   const [syncing, setSyncing] = useState<'push' | 'pull' | null>(null);
   const [syncMsg, setSyncMsg] = useState('');
+
+  // Setlist picker state
+  const [pickerMode, setPickerMode] = useState<'upload' | 'download' | null>(null);
+  const [pickerLoading, setPickerLoading] = useState(false);
+  const [cloudSetlists, setCloudSetlists] = useState<Setlist[]>([]);
+  const [pickerMsg, setPickerMsg] = useState('');
 
   const handleSync = async (direction: 'push' | 'pull') => {
     setSyncing(direction);
@@ -50,6 +59,59 @@ const SettingsScreen = () => {
       setSyncMsg(`✗ Sync failed: ${msg}`);
     } finally {
       setSyncing(null);
+    }
+  };
+
+  const openUploadPicker = () => {
+    setPickerMode('upload');
+    setPickerMsg('');
+    setCloudSetlists([]);
+  };
+
+  const openDownloadPicker = async () => {
+    setPickerMode('download');
+    setPickerMsg('');
+    setPickerLoading(true);
+    try {
+      const lists = await fetchCloudSetlists();
+      setCloudSetlists(lists);
+      if (lists.length === 0) setPickerMsg('No setlists found in cloud.');
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : 'Unknown error';
+      setPickerMsg(`Failed to load: ${msg}`);
+    } finally {
+      setPickerLoading(false);
+    }
+  };
+
+  const handleUploadSetlist = async (setlistId: string) => {
+    setPickerLoading(true);
+    setPickerMsg('');
+    try {
+      const result = await uploadSetlist(setlistId);
+      const sl = setlists.find((s) => s.id === setlistId);
+      const songMsg = result.songsUploaded > 0 ? `, ${result.songsUploaded} song(s) uploaded` : '';
+      setPickerMsg(`✓ "${sl?.name}" uploaded${songMsg}`);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : 'Unknown error';
+      setPickerMsg(`✗ Upload failed: ${msg}`);
+    } finally {
+      setPickerLoading(false);
+    }
+  };
+
+  const handleDownloadSetlist = async (setlist: Setlist) => {
+    setPickerLoading(true);
+    setPickerMsg('');
+    try {
+      const result = await downloadSetlist(setlist);
+      const songMsg = result.songsDownloaded > 0 ? `, ${result.songsDownloaded} song(s) downloaded` : '';
+      setPickerMsg(`✓ "${setlist.name}" downloaded${songMsg}`);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : 'Unknown error';
+      setPickerMsg(`✗ Download failed: ${msg}`);
+    } finally {
+      setPickerLoading(false);
     }
   };
 
@@ -108,6 +170,80 @@ const SettingsScreen = () => {
           <p className={`sync-msg ${syncMsg.startsWith('✗') ? 'error' : ''}`}>{syncMsg}</p>
         )}
       </div>
+
+      <div className="settings-section">
+        <h3 className="settings-section-title">Setlist Sync</h3>
+        <div className="settings-card">
+          <button className="settings-sync-row" onClick={openUploadPicker} disabled={pickerMode !== null}>
+            <span className="settings-icon">📤</span>
+            <div className="settings-sync-info">
+              <span>Upload Setlist</span>
+              <span className="settings-hint">Pick a setlist to upload (includes its songs)</span>
+            </div>
+            <span className="arrow">→</span>
+          </button>
+          <div className="settings-divider" />
+          <button className="settings-sync-row" onClick={openDownloadPicker} disabled={pickerMode !== null}>
+            <span className="settings-icon">📥</span>
+            <div className="settings-sync-info">
+              <span>Download Setlist</span>
+              <span className="settings-hint">Pick a cloud setlist to download (includes its songs)</span>
+            </div>
+            <span className="arrow">→</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Setlist picker modal */}
+      {pickerMode && (
+        <div className="picker-overlay" onClick={() => !pickerLoading && setPickerMode(null)}>
+          <div className="picker-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="picker-header">
+              <h3>{pickerMode === 'upload' ? 'Upload Setlist' : 'Download Setlist'}</h3>
+              <button className="picker-close" onClick={() => setPickerMode(null)} disabled={pickerLoading}>✕</button>
+            </div>
+            {pickerLoading && (
+              <div className="picker-loading"><span className="spinner-small" /></div>
+            )}
+            {pickerMsg && (
+              <p className={`picker-msg ${pickerMsg.startsWith('✗') ? 'error' : ''}`}>{pickerMsg}</p>
+            )}
+            <div className="picker-list">
+              {pickerMode === 'upload' && setlists.map((sl) => (
+                <button
+                  key={sl.id}
+                  className="picker-item"
+                  disabled={pickerLoading}
+                  onClick={() => handleUploadSetlist(sl.id)}
+                >
+                  <div className="picker-item-info">
+                    <span className="picker-item-name">{sl.name}</span>
+                    <span className="picker-item-detail">{sl.songIds.length} song(s)</span>
+                  </div>
+                  <span className="arrow">↑</span>
+                </button>
+              ))}
+              {pickerMode === 'download' && cloudSetlists.map((sl) => (
+                <button
+                  key={sl.id}
+                  className="picker-item"
+                  disabled={pickerLoading}
+                  onClick={() => handleDownloadSetlist(sl)}
+                >
+                  <div className="picker-item-info">
+                    <span className="picker-item-name">{sl.name}</span>
+                    <span className="picker-item-detail">{sl.songIds.length} song(s)</span>
+                  </div>
+                  <span className="arrow">↓</span>
+                </button>
+              ))}
+              {pickerMode === 'upload' && setlists.length === 0 && (
+                <p className="picker-empty">No local setlists to upload.</p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="settings-section">
         <button className="btn-danger full-width" onClick={signOut}>Sign Out</button>

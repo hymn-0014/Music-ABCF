@@ -11,7 +11,14 @@ function userSetlistsCol(uid: string) {
 }
 
 export async function syncSongsToFirestore(uid: string, songs: Song[]): Promise<void> {
+  const snap = await getDocs(userSongsCol(uid));
+  const localIds = new Set(songs.map((s) => s.id));
   const batch = writeBatch(db);
+  // Delete cloud songs not present locally
+  for (const d of snap.docs) {
+    if (!localIds.has(d.id)) batch.delete(d.ref);
+  }
+  // Write all local songs
   for (const song of songs) {
     batch.set(doc(db, 'users', uid, 'songs', song.id), song);
   }
@@ -24,7 +31,14 @@ export async function fetchSongsFromFirestore(uid: string): Promise<Song[]> {
 }
 
 export async function syncSetlistsToFirestore(uid: string, setlists: Setlist[]): Promise<void> {
+  const snap = await getDocs(userSetlistsCol(uid));
+  const localIds = new Set(setlists.map((sl) => sl.id));
   const batch = writeBatch(db);
+  // Delete cloud setlists not present locally
+  for (const d of snap.docs) {
+    if (!localIds.has(d.id)) batch.delete(d.ref);
+  }
+  // Write all local setlists
   for (const sl of setlists) {
     batch.set(doc(db, 'users', uid, 'setlists', sl.id), sl);
   }
@@ -50,4 +64,12 @@ export async function uploadSingleSetlist(uid: string, setlist: Setlist): Promis
 
 export async function deleteSetlistFromFirestore(uid: string, setlistId: string): Promise<void> {
   await deleteDoc(doc(db, 'users', uid, 'setlists', setlistId));
+}
+
+/** Fetch specific songs by their IDs */
+export async function fetchSongsByIds(uid: string, songIds: string[]): Promise<Song[]> {
+  if (songIds.length === 0) return [];
+  const snap = await getDocs(userSongsCol(uid));
+  const idSet = new Set(songIds);
+  return snap.docs.filter((d) => idSet.has(d.id)).map((d) => d.data() as Song);
 }
