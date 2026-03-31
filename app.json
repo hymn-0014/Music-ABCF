@@ -1,1 +1,10 @@
-{\n  \"name\": \"Music-ABCF\",\n  \"version\": \"1.0.0\",\n  \"description\": \"A comprehensive music app for viewing and managing hymns.\",\n  \"main\": \"src/App.tsx\",\n  \"scripts\": {\n    \"start\": \"react-scripts start\",\n    \"build\": \"react-scripts build\",\n    \"test\": \"react-scripts test\"\n  },\n  \"dependencies\": {\n    \"firebase\": \"^9.0.0\",\n    \"zustand\": \"^4.0.0\"\n  }\n}
+{
+  "expo": {
+    "name": "Music-ABCF",
+    "slug": "music-abcf",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "platforms": ["ios", "android", "web"],
+    "sdkVersion": "50.0.0"
+  }
+}

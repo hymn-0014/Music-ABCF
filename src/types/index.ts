@@ -1,35 +1,22 @@
-// src/types/index.ts
-
-export interface Song {
-    id: string;
-    title: string;
-    artist: string;
-    album?: string;
-    year?: number;
-    genre?: string;
-    duration: number; // in seconds
-    lyrics?: string;
+export interface ChordLyricLine {
+  chords: string; // chord symbols spaced above words
+  lyrics: string; // the lyric text
 }
 
-export interface Chord {
-    id: string;
-    name: string;
-    type: string; // major, minor, etc.
-    positions: string[]; // finger positions on the fretboard
+export interface Song {
+  id: string;
+  title: string;
+  artist: string;
+  key: string; // original key, e.g. "G"
+  lines: ChordLyricLine[];
 }
 
 export interface Setlist {
-    id: string;
-    songs: Song[];
-    date: string; // ISO date string
-    location: string;
-    notes?: string;
+  id: string;
+  name: string;
+  songIds: string[];
+  createdAt: string; // ISO date
 }
 
-export interface User {
-    id: string;
-    username: string;
-    email: string;
-    passwords: { [key: string]: string }; // hashed passwords, can be with different providers
-    createdAt: string; // ISO date string
-}
+export type NotationMode = 'standard' | 'nashville';
+export type AccidentalPreference = 'sharp' | 'flat';

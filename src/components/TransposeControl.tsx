@@ -1,28 +1,42 @@
-import React, { useState } from 'react';
+import React from 'react';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { AccidentalPreference } from '../types';
 
-const TransposeControl: React.FC = () => {
-    const [transposeLevel, setTransposeLevel] = useState(0);
-    const [sharp, setSharp] = useState(true);
+interface TransposeControlProps {
+  transpose: number;
+  accidental: AccidentalPreference;
+  onTransposeChange: (value: number) => void;
+  onAccidentalChange: (pref: AccidentalPreference) => void;
+}
 
-    const incrementTranspose = () => setTransposeLevel(transposeLevel + 1);
-    const decrementTranspose = () => setTransposeLevel(transposeLevel - 1);
-    const toggleSharpFlat = () => setSharp(!sharp);
+const TransposeControl: React.FC<TransposeControlProps> = ({
+  transpose, accidental, onTransposeChange, onAccidentalChange,
+}) => (
+  <View style={styles.row}>
+    <TouchableOpacity style={styles.btn} onPress={() => onTransposeChange(transpose - 1)}>
+      <Text style={styles.btnText}>-</Text>
+    </TouchableOpacity>
+    <Text style={styles.level}>{transpose > 0 ? `+${transpose}` : transpose}</Text>
+    <TouchableOpacity style={styles.btn} onPress={() => onTransposeChange(transpose + 1)}>
+      <Text style={styles.btnText}>+</Text>
+    </TouchableOpacity>
+    <TouchableOpacity
+      style={[styles.btn, { marginLeft: 16 }]}
+      onPress={() => onAccidentalChange(accidental === 'sharp' ? 'flat' : 'sharp')}
+    >
+      <Text style={styles.btnText}>{accidental === 'sharp' ? '♯' : '♭'}</Text>
+    </TouchableOpacity>
+  </View>
+);
 
-    return (
-        <div>
-            <h2>Transpose Control</h2>
-            <div>
-                <button onClick={decrementTranspose}>-</button>
-                <span>{transposeLevel}</span>
-                <button onClick={incrementTranspose}>+</button>
-            </div>
-            <div>
-                <button onClick={toggleSharpFlat}>
-                    {sharp ? 'Switch to Flat' : 'Switch to Sharp'}
-                </button>
-            </div>
-        </div>
-    );
-};
+const styles = StyleSheet.create({
+  row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', padding: 8 },
+  btn: {
+    width: 44, height: 44, borderRadius: 22, backgroundColor: '#007AFF',
+    alignItems: 'center', justifyContent: 'center',
+  },
+  btnText: { color: '#fff', fontSize: 22, fontWeight: 'bold' },
+  level: { fontSize: 20, marginHorizontal: 12, minWidth: 30, textAlign: 'center' },
+});
 
 export default TransposeControl;

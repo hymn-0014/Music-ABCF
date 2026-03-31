@@ -1,73 +1,87 @@
-import React, { useState, useEffect } from 'react';
-import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
+import React, { useState, useCallback } from 'react';
+import { View, Text, TouchableOpacity, TextInput, FlatList, StyleSheet } from 'react-native';
+import { Song } from '../types';
 
-const SetlistManager = () => {
-    const [songs, setSongs] = useState([]);
+interface SetlistManagerProps {
+  availableSongs: Song[];
+  songIds: string[];
+  onReorder: (songIds: string[]) => void;
+}
 
-    // Load setlist from localStorage on component mount
-    useEffect(() => {
-        const savedSetlist = JSON.parse(localStorage.getItem('setlist')) || [];
-        setSongs(savedSetlist);
-    }, []);
+const SetlistManager: React.FC<SetlistManagerProps> = ({ availableSongs, songIds, onReorder }) => {
+  const [filterText, setFilterText] = useState('');
 
-    // Save setlist to localStorage
-    const saveSetlist = () => {
-        localStorage.setItem('setlist', JSON.stringify(songs));
-    };
+  const moveItem = useCallback(
+    (fromIndex: number, direction: number) => {
+      const toIndex = fromIndex + direction;
+      if (toIndex < 0 || toIndex >= songIds.length) return;
+      const next = [...songIds];
+      [next[fromIndex], next[toIndex]] = [next[toIndex], next[fromIndex]];
+      onReorder(next);
+    },
+    [songIds, onReorder],
+  );
 
-    // Handle drag and drop
-    const onDragEnd = (result) => {
-        if (!result.destination) return;
-        const updatedSongs = Array.from(songs);
-        const [removed] = updatedSongs.splice(result.source.index, 1);
-        updatedSongs.splice(result.destination.index, 0, removed);
-        setSongs(updatedSongs);
-    };
+  const removeSong = useCallback(
+    (index: number) => {
+      const next = songIds.filter((_, i) => i !== index);
+      onReorder(next);
+    },
+    [songIds, onReorder],
+  );
 
-    // Add new song
-    const addSong = (song) => {
-        if (song && !songs.includes(song)) {
-            setSongs([...songs, song]);
-        }
-    };
+  const addSong = useCallback(
+    (id: string) => {
+      if (!songIds.includes(id)) onReorder([...songIds, id]);
+    },
+    [songIds, onReorder],
+  );
 
-    // Remove a song
-    const removeSong = (index) => {
-        const updatedSongs = songs.filter((_, i) => i !== index);
-        setSongs(updatedSongs);
-    };
+  const songMap = new Map(availableSongs.map((s) => [s.id, s]));
+  const filteredAvailable = availableSongs.filter(
+    (s) => !songIds.includes(s.id) && s.title.toLowerCase().includes(filterText.toLowerCase()),
+  );
 
-    return (
-        <div>
-            <h2>Setlist Manager</h2>
-            <button onClick={saveSetlist}>Save Setlist</button>
-            <DragDropContext onDragEnd={onDragEnd}>
-                <Droppable droppableId="setlist">
-                    {(provided) => (
-                        <ul ref={provided.innerRef} {...provided.droppableProps}>
-                            {songs.map((song, index) => (
-                                <Draggable key={song} draggableId={song} index={index}>
-                                    {(provided) => (
-                                        <li ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps}>
-                                            {song}
-                                            <button onClick={() => removeSong(index)}>Remove</button>
-                                        </li>
-                                    )}
-                                </Draggable>
-                            ))}
-                            {provided.placeholder}
-                        </ul>
-                    )}
-                </Droppable>
-            </DragDropContext>
-            <input type="text" placeholder="Add a new song" onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                    addSong(e.target.value);
-                    e.target.value = '';
-                }
-            }} />
-        </div>
-    );
+  return (
+    <View style={styles.container}>
+      <Text style={styles.heading}>Setlist</Text>
+      <FlatList
+        data={songIds}
+        keyExtractor={(id) => id}
+        renderItem={({ item, index }) => (
+          <View style={styles.row}>
+            <Text style={styles.songTitle}>{songMap.get(item)?.title ?? item}</Text>
+            <TouchableOpacity onPress={() => moveItem(index, -1)}><Text style={styles.action}>▲</Text></TouchableOpacity>
+            <TouchableOpacity onPress={() => moveItem(index, 1)}><Text style={styles.action}>▼</Text></TouchableOpacity>
+            <TouchableOpacity onPress={() => removeSong(index)}><Text style={styles.remove}>✕</Text></TouchableOpacity>
+          </View>
+        )}
+      />
+      <Text style={styles.heading}>Add Songs</Text>
+      <TextInput style={styles.input} placeholder="Filter songs…" value={filterText} onChangeText={setFilterText} />
+      <FlatList
+        data={filteredAvailable}
+        keyExtractor={(s) => s.id}
+        renderItem={({ item }) => (
+          <TouchableOpacity style={styles.addRow} onPress={() => addSong(item.id)}>
+            <Text style={styles.songTitle}>{item.title}</Text>
+            <Text style={styles.action}>＋</Text>
+          </TouchableOpacity>
+        )}
+      />
+    </View>
+  );
 };
+
+const styles = StyleSheet.create({
+  container: { flex: 1, padding: 16 },
+  heading: { fontSize: 20, fontWeight: 'bold', marginVertical: 8 },
+  row: { flexDirection: 'row', alignItems: 'center', paddingVertical: 8, borderBottomWidth: 1, borderColor: '#ddd' },
+  addRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 8 },
+  songTitle: { flex: 1, fontSize: 16 },
+  action: { fontSize: 20, paddingHorizontal: 8, color: '#007AFF' },
+  remove: { fontSize: 18, paddingHorizontal: 8, color: '#ff3b30' },
+  input: { borderWidth: 1, borderColor: '#ccc', borderRadius: 8, padding: 8, marginBottom: 8 },
+});
 
 export default SetlistManager;

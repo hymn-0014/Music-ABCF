@@ -1,56 +1,68 @@
 import React from 'react';
-import { View, Text, StyleSheet, Button } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import useAppStore from '../store/useAppStore';
+import SongChordViewer from '../components/SongChordViewer';
 
-const ViewerScreen = () => {
-    const currentSong = {
-        title: 'Song Title Here',
-        lyrics: ['Line 1 of the lyrics', 'Line 2 of the lyrics', 'Line 3 of the lyrics'],
-        chords: ['C', 'G', 'Am', 'F'],
-    };
+const ViewerScreen = ({ navigation }: any) => {
+  const songs = useAppStore((s) => s.songs);
+  const currentSongId = useAppStore((s) => s.currentSongId);
+  const setCurrentSongId = useAppStore((s) => s.setCurrentSongId);
+  const currentSetlistId = useAppStore((s) => s.currentSetlistId);
+  const setlists = useAppStore((s) => s.setlists);
+  const darkMode = useAppStore((s) => s.darkMode);
 
-    const handleTranspose = (direction) => {
-        // Logic for transposing chords
-    };
+  const song = songs.find((s) => s.id === currentSongId);
+  const setlist = setlists.find((sl) => sl.id === currentSetlistId);
+  const setlistSongIds = setlist?.songIds ?? [];
+  const currentIndex = setlistSongIds.indexOf(currentSongId ?? '');
 
+  const goPrev = () => {
+    if (currentIndex > 0) setCurrentSongId(setlistSongIds[currentIndex - 1]);
+  };
+  const goNext = () => {
+    if (currentIndex >= 0 && currentIndex < setlistSongIds.length - 1)
+      setCurrentSongId(setlistSongIds[currentIndex + 1]);
+  };
+
+  if (!song) {
     return (
-        <View style={styles.container}>
-            <Text style={styles.title}>{currentSong.title}</Text>
-            {currentSong.chords.map((chord, index) => (
-                <Text key={index} style={styles.chord}>{chord}</Text>
-            ))}
-            {currentSong.lyrics.map((line, index) => (
-                <Text key={index} style={styles.lyric}>{line}</Text>
-            ))}
-            <View style={styles.controls}>
-                <Button title='Transpose Up' onPress={() => handleTranspose('up')} />
-                <Button title='Transpose Down' onPress={() => handleTranspose('down')} />
-            </View>
-        </View>
+      <View style={styles.center}>
+        <Text>No song selected.</Text>
+      </View>
     );
+  }
+
+  const bg = darkMode ? '#1a1a1a' : '#fff';
+  const text = darkMode ? '#eee' : '#000';
+
+  return (
+    <View style={[styles.container, { backgroundColor: bg }]}>  
+      <Text style={[styles.title, { color: text }]}>{song.title}</Text>
+      <Text style={[styles.artist, { color: darkMode ? '#aaa' : '#666' }]}>{song.artist} · Key of {song.key}</Text>
+      <SongChordViewer song={song} darkMode={darkMode} />
+      {setlistSongIds.length > 1 && (
+        <View style={styles.navRow}>
+          <TouchableOpacity style={[styles.navBtn, currentIndex <= 0 && styles.disabled]} onPress={goPrev} disabled={currentIndex <= 0}>
+            <Text style={styles.navText}>← Prev</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={[styles.navBtn, currentIndex >= setlistSongIds.length - 1 && styles.disabled]} onPress={goNext} disabled={currentIndex >= setlistSongIds.length - 1}>
+            <Text style={styles.navText}>Next →</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+    </View>
+  );
 };
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        padding: 20,
-        backgroundColor: '#fff',
-    },
-    title: {
-        fontSize: 24,
-        fontWeight: 'bold',
-        marginBottom: 20,
-    },
-    chord: {
-        fontSize: 18,
-        color: '#007AFF',
-    },
-    lyric: {
-        fontSize: 16,
-        marginVertical: 5,
-    },
-    controls: {
-        marginTop: 20,
-    },
+  container: { flex: 1, padding: 16 },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  title: { fontSize: 24, fontWeight: 'bold' },
+  artist: { fontSize: 14, marginBottom: 8 },
+  navRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 12 },
+  navBtn: { backgroundColor: '#007AFF', borderRadius: 8, paddingVertical: 10, paddingHorizontal: 24 },
+  navText: { color: '#fff', fontSize: 16, fontWeight: '600' },
+  disabled: { opacity: 0.4 },
 });
 
 export default ViewerScreen;

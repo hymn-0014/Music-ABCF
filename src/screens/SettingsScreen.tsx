@@ -1,52 +1,41 @@
-import React, { useState } from 'react';
-import { View, Text, Switch, TextInput, Button } from 'react-native';
+import React from 'react';
+import { View, Text, Switch, StyleSheet } from 'react-native';
+import useAppStore from '../store/useAppStore';
 
 const SettingsScreen = () => {
-  const [isDarkMode, setIsDarkMode] = useState(false);
-  const [fontSize, setFontSize] = useState('16');
-  const [sharpFlat, setSharpFlat] = useState('sharp');
-  const [syncEnabled, setSyncEnabled] = useState(false);
+  const darkMode = useAppStore((s) => s.darkMode);
+  const toggleDarkMode = useAppStore((s) => s.toggleDarkMode);
+  const accidental = useAppStore((s) => s.accidental);
+  const setAccidental = useAppStore((s) => s.setAccidental);
+
+  const bg = darkMode ? '#1a1a1a' : '#fff';
+  const text = darkMode ? '#eee' : '#000';
 
   return (
-    <View style={{ padding: 20 }}>
-      <Text>Settings</Text>
+    <View style={[styles.container, { backgroundColor: bg }]}>  
+      <Text style={[styles.heading, { color: text }]}>Settings</Text>
 
-      <View>
-        <Text>Dark Mode:</Text>
+      <View style={styles.row}>
+        <Text style={[styles.label, { color: text }]}>Dark Mode</Text>
+        <Switch value={darkMode} onValueChange={toggleDarkMode} />
+      </View>
+
+      <View style={styles.row}>
+        <Text style={[styles.label, { color: text }]}>Prefer Sharps</Text>
         <Switch
-          value={isDarkMode}
-          onValueChange={setIsDarkMode}
+          value={accidental === 'sharp'}
+          onValueChange={(v) => setAccidental(v ? 'sharp' : 'flat')}
         />
       </View>
-
-      <View>
-        <Text>Font Size:</Text>
-        <TextInput
-          value={fontSize}
-          onChangeText={setFontSize}
-          keyboardType="numeric"
-        />
-      </View>
-
-      <View>
-        <Text>Prefer Sharps or Flats:</Text>
-        <Switch
-          value={sharpFlat === 'sharp'}
-          onValueChange={(value) => setSharpFlat(value ? 'sharp' : 'flat')}
-        />
-      </View>
-
-      <View>
-        <Text>Enable Sync:</Text>
-        <Switch
-          value={syncEnabled}
-          onValueChange={setSyncEnabled}
-        />
-      </View>
-
-      <Button title="Save Settings" onPress={() => {/* Save settings logic */}} />
     </View>
   );
 };
+
+const styles = StyleSheet.create({
+  container: { flex: 1, padding: 24 },
+  heading: { fontSize: 22, fontWeight: 'bold', marginBottom: 24 },
+  row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 14, borderBottomWidth: 1, borderColor: '#ddd' },
+  label: { fontSize: 16 },
+});
 
 export default SettingsScreen;

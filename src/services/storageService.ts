@@ -1,48 +1,22 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Song, Setlist } from '../types';
 
-const STORAGE_KEYS = {
-    SONGS: 'songs',
-    SETLISTS: 'setlists',
-};
+const KEYS = { SONGS: '@music_abcf_songs', SETLISTS: '@music_abcf_setlists' } as const;
 
-export const storageService = {
-    // Save songs to AsyncStorage
-    saveSongs: async (songs) => {
-        try {
-            await AsyncStorage.setItem(STORAGE_KEYS.SONGS, JSON.stringify(songs));
-        } catch (error) {
-            console.error('Failed to save songs:', error);
-        }
-    },
+export async function saveSongs(songs: Song[]): Promise<void> {
+  await AsyncStorage.setItem(KEYS.SONGS, JSON.stringify(songs));
+}
 
-    // Load songs from AsyncStorage
-    loadSongs: async () => {
-        try {
-            const songs = await AsyncStorage.getItem(STORAGE_KEYS.SONGS);
-            return songs ? JSON.parse(songs) : [];
-        } catch (error) {
-            console.error('Failed to load songs:', error);
-            return [];
-        }
-    },
+export async function loadSongs(): Promise<Song[]> {
+  const raw = await AsyncStorage.getItem(KEYS.SONGS);
+  return raw ? (JSON.parse(raw) as Song[]) : [];
+}
 
-    // Save setlists to AsyncStorage
-    saveSetlists: async (setlists) => {
-        try {
-            await AsyncStorage.setItem(STORAGE_KEYS.SETLISTS, JSON.stringify(setlists));
-        } catch (error) {
-            console.error('Failed to save setlists:', error);
-        }
-    },
+export async function saveSetlists(setlists: Setlist[]): Promise<void> {
+  await AsyncStorage.setItem(KEYS.SETLISTS, JSON.stringify(setlists));
+}
 
-    // Load setlists from AsyncStorage
-    loadSetlists: async () => {
-        try {
-            const setlists = await AsyncStorage.getItem(STORAGE_KEYS.SETLISTS);
-            return setlists ? JSON.parse(setlists) : [];
-        } catch (error) {
-            console.error('Failed to load setlists:', error);
-            return [];
-        }
-    },
-};
+export async function loadSetlists(): Promise<Setlist[]> {
+  const raw = await AsyncStorage.getItem(KEYS.SETLISTS);
+  return raw ? (JSON.parse(raw) as Setlist[]) : [];
+}

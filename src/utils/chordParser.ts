@@ -1,40 +1,35 @@
-// chordParser.ts
+import { ChordLyricLine } from '../types';
 
 /**
- * Parses lyrics with embedded chords and generates chord-to-word alignment.
+ * Parse a raw chord-sheet string into structured ChordLyricLine pairs.
+ * Input format: alternating chord lines (start with spaces or chord tokens)
+ * and lyric lines.  A chord line is detected when every non-whitespace
+ * token matches a chord pattern.
  */
+const CHORD_RE = /^[A-G][#b]?[a-z0-9/]*$/;
 
-function parseLyricsWithChords(lyrics: string): ChordAlignment[] {
-    const lines = lyrics.split('\n');
-    const chordAlignments: ChordAlignment[] = [];
-
-    lines.forEach(line => {
-        const words = line.split(' ');
-        let currentChords: string[] = [];
-
-        words.forEach(word => {
-            const chordMatch = word.match(/\[(.*?)\]/);
-            if (chordMatch) {
-                // If a chord is found, push current word alignments
-                if (currentChords.length) {
-                    chordAlignments.push({ chords: currentChords, word: '', line: '' });
-                }
-                currentChords.push(chordMatch[1]);
-                word = word.replace(chordMatch[0], ''); // Remove chord from word
-            }
-            // Align the word with the last found chords
-            if (currentChords.length) {
-                chordAlignments.push({ chords: [...currentChords], word, line });
-            }
-        });
-    });
-    return chordAlignments;
+function isChordLine(line: string): boolean {
+  if (line.trim() === '') return false;
+  const tokens = line.trim().split(/\s+/);
+  return tokens.every((t) => CHORD_RE.test(t));
 }
 
-interface ChordAlignment {
-    chords: string[];
-    word: string;
-    line: string;
+export function parseChordSheet(raw: string): ChordLyricLine[] {
+  const lines = raw.split('\n');
+  const result: ChordLyricLine[] = [];
+  let i = 0;
+  while (i < lines.length) {
+    if (isChordLine(lines[i])) {
+      const chords = lines[i];
+      const lyrics = i + 1 < lines.length && !isChordLine(lines[i + 1]) ? lines[i + 1] : '';
+      result.push({ chords, lyrics });
+      i += lyrics ? 2 : 1;
+    } else if (lines[i].trim() !== '') {
+      result.push({ chords: '', lyrics: lines[i] });
+      i++;
+    } else {
+      i++;
+    }
+  }
+  return result;
 }
-
-export { parseLyricsWithChords };
