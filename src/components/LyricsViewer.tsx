@@ -16,38 +16,7 @@ interface LyricsViewerProps {
 const LyricsViewer: React.FC<LyricsViewerProps> = ({
   lines, transpose, songKey, notation, accidental, autoScrollEnabled, autoScrollSpeed,
 }) => {
-  // Get chord color based on its scale degree relative to the song key
-  const getChordColor = (chordRoot: string): string => {
-    const SHARP_NOTES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
-    const FLAT_NOTES = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B'];
-    
-    const getNoteIndex = (note: string): number => {
-      let idx = SHARP_NOTES.indexOf(note);
-      if (idx >= 0) return idx;
-      idx = FLAT_NOTES.indexOf(note);
-      return idx >= 0 ? idx : -1;
-    };
-
-    const keyIdx = getNoteIndex(songKey);
-    const chordIdx = getNoteIndex(chordRoot);
-    
-    if (keyIdx === -1 || chordIdx === -1) return '#4FC3F7'; // Default cyan
-    
-    const interval = (chordIdx - keyIdx + 12) % 12;
-    
-    // Color code by scale degree (I, ii, iii, IV, V, vi, vii)
-    const colors: Record<number, string> = {
-      0: '#90EE90',  // I - Green (tonic)
-      2: '#FFB6C1',  // ii - Light pink
-      4: '#87CEEB',  // iii - Sky blue
-      5: '#FFD700',  // IV - Gold
-      7: '#FF6B6B',  // V - Red
-      9: '#DDA0DD',  // vi - Plum
-      11: '#FFA500', // vii - Orange
-    };
-    
-    return colors[interval] || '#4FC3F7'; // Default cyan for other intervals
-  };
+  const CHORD_COLOR = '#4FC3F7';
 
   // Parse and render colored chords preserving original spacing
   const renderColoredChormLine = (chordLine: string): React.ReactNode[] => {
@@ -69,10 +38,8 @@ const LyricsViewer: React.FC<LyricsViewerProps> = ({
       
       // Add the colored chord
       const chord = match[0];
-      const rootNote = chord.match(/^[A-G][#b]?/)?.[0] || '';
-      const color = getChordColor(rootNote);
       elements.push(
-        <Text key={`chord-${match.index}`} style={[styles.chordLine, { color }]}>
+        <Text key={`chord-${match.index}`} style={[styles.chordLine, { color: CHORD_COLOR }]}>
           {chord}
         </Text>
       );
@@ -137,8 +104,10 @@ const LyricsViewer: React.FC<LyricsViewerProps> = ({
     <ScrollView
       ref={scrollRef}
       style={styles.container}
+      contentContainerStyle={styles.contentContainer}
       scrollEnabled={true}
       showsVerticalScrollIndicator={true}
+      testID="lyrics-scroll"
       onLayout={(event) => {
         containerHeightRef.current = event.nativeEvent.layout.height;
       }}
@@ -174,11 +143,21 @@ const LyricsViewer: React.FC<LyricsViewerProps> = ({
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16, backgroundColor: '#121212', minHeight: 0 },
-  lineBlock: { marginBottom: 4 },
+  container: {
+    flex: 1,
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 40,
+    backgroundColor: '#1A1A1A',
+    minHeight: 0,
+  },
+  contentContainer: {
+    paddingBottom: 60,
+  },
+  lineBlock: { marginBottom: 6 },
   chordLineWrapper: { fontFamily: 'monospace', fontSize: 18, fontWeight: 'bold' },
   chordLine: { fontFamily: 'monospace', fontSize: 18, fontWeight: 'bold' },
-  lyricLine: { fontFamily: 'monospace', fontSize: 18, color: '#FFFFFF' },
+  lyricLine: { fontFamily: 'monospace', fontSize: 18, color: '#E0E0E0', lineHeight: 26 },
 });
 
 export default LyricsViewer;

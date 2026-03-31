@@ -40,6 +40,12 @@ const ViewerScreen = ({ navigation }: any) => {
     <View style={styles.container}>
       <View style={styles.header}>
         <View style={styles.headerTop}>
+          <TouchableOpacity
+            style={styles.backBtn}
+            onPress={() => navigation.goBack()}
+          >
+            <Text style={styles.backBtnText}>←</Text>
+          </TouchableOpacity>
           <View style={{ flex: 1 }}>
             <Text style={styles.title} numberOfLines={1}>{song.title}</Text>
             <Text style={styles.artist}>{song.artist} · Key of {song.key}</Text>
@@ -86,8 +92,25 @@ const styles = StyleSheet.create({
   emptyText: { fontSize: 18, color: '#FFFFFF', fontWeight: '600', marginBottom: 16 },
   goBackBtn: { backgroundColor: '#4FC3F7', borderRadius: 10, paddingHorizontal: 24, paddingVertical: 12 },
   goBackText: { color: '#121212', fontSize: 16, fontWeight: '600' },
-  header: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 8, borderBottomWidth: 1, borderBottomColor: '#2A2A2A' },
+  header: {
+    paddingHorizontal: 12,
+    paddingTop: 10,
+    paddingBottom: 10,
+    backgroundColor: '#1E1E1E',
+    borderBottomWidth: 1,
+    borderBottomColor: '#2A2A2A',
+  },
   headerTop: { flexDirection: 'row', alignItems: 'center' },
+  backBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#2A2A2A',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 10,
+  },
+  backBtnText: { color: '#4FC3F7', fontSize: 22, fontWeight: 'bold' },
   editBtn: { padding: 8, marginLeft: 8 },
   editBtnText: { fontSize: 20 },
   title: { fontSize: 22, fontWeight: 'bold', color: '#FFFFFF' },
