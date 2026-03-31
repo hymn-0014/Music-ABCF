@@ -4,6 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Music-ABCF</title>
+    <!-- Polyfill missing Performance API methods (fixes "mgt.clearMarks is not a function") -->
+    <script>
+      (function() {
+        var p = window.performance || (window.performance = {});
+        if (!p.clearMarks)  p.clearMarks  = function() {};
+        if (!p.clearMeasures) p.clearMeasures = function() {};
+        if (!p.mark)        p.mark        = function() {};
+        if (!p.measure)     p.measure     = function() {};
+      })();
+    </script>
     <!-- Better monospace font for chords -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -43,7 +53,7 @@
         [data-testid="lyrics-scroll"] {
             flex: 1 !important;
             min-height: 0 !important;
-            overflow-y: auto !important;
+            overflow-y: scroll !important;
             -webkit-overflow-scrolling: touch;
         }
         /* The inner content wrapper rendered by ScrollView */

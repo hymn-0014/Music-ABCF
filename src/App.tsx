@@ -34,15 +34,19 @@ const TabIcon = ({ label, focused }: { label: string; focused: boolean }) => (
   <Text style={{ fontSize: 11, color: focused ? '#4FC3F7' : '#888', marginTop: 2 }}>{label}</Text>
 );
 
+const MUSIC_LOGO_ASSET = '/assets/logos/music-ministry-logo.png';
 const MUSIC_LOGO_SVG = `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 40"><text x="4" y="28" font-family="sans-serif" font-size="18" font-weight="700" fill="%234FC3F7">♪</text><text x="24" y="28" font-family="sans-serif" font-size="16" font-weight="700" fill="%23FFFFFF">Music</text><text x="80" y="28" font-family="sans-serif" font-size="16" font-weight="700" fill="%234FC3F7">ABCF</text></svg>')}`;
 
 const LogoHeader = () => {
+  const [logoFailed, setLogoFailed] = useState(false);
+
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12 }}>
       <Image
-        source={{ uri: MUSIC_LOGO_SVG }}
+        source={{ uri: logoFailed ? MUSIC_LOGO_SVG : MUSIC_LOGO_ASSET }}
         style={{ width: 120, height: 30, resizeMode: 'contain' }}
         alt="Music ABCF"
+        onError={() => setLogoFailed(true)}
       />
     </View>
   );

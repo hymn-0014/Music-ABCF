@@ -27,6 +27,7 @@ const LyricsViewer: React.FC<LyricsViewerProps> = ({
     const elements: React.ReactNode[] = [];
     let lastIndex = 0;
     let match;
+    CHORD_PATTERN.lastIndex = 0;
     
     // eslint-disable-next-line no-cond-assign
     while ((match = CHORD_PATTERN.exec(chordLine)) !== null) {
