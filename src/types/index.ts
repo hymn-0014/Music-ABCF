@@ -41,6 +41,7 @@ export interface SyncResult {
   setlistsDownloaded: number;
   overwritten: number;
   skipped: number;
+  warnings: string[];
 }
 
 export type SyncConfirmFn = (title: string, message: string) => Promise<boolean>;

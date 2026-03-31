@@ -54,8 +54,8 @@ interface AppState {
   smartPullFromCloud: (confirm: SyncConfirmFn) => Promise<SyncResult>;
   // setlist-level sync
   fetchCloudSetlists: () => Promise<Setlist[]>;
-  uploadSetlist: (setlistId: string) => Promise<{ songsUploaded: number }>;
-  downloadSetlist: (setlist: Setlist) => Promise<{ songsDownloaded: number }>;
+  uploadSetlist: (setlistId: string) => Promise<{ songsUploaded: number; warnings: string[] }>;
+  downloadSetlist: (setlist: Setlist) => Promise<{ songsDownloaded: number; warnings: string[] }>;
 }
 
 const normalizeSong = (song: Song): Song => ({
@@ -80,6 +80,13 @@ const songsContentEqual = (a: Song, b: Song): boolean => {
   return stableJSON(a.lines) === stableJSON(b.lines);
 };
 
+/** Compare lastModifiedAt timestamps. Returns positive if a is newer, negative if b is newer, 0 if equal/unknown */
+const compareTimestamps = (a?: string, b?: string): number => {
+  const ta = a ? new Date(a).getTime() : 0;
+  const tb = b ? new Date(b).getTime() : 0;
+  return ta - tb;
+};
+
 const useAppStore = create<AppState>((set, get) => ({
   uid: null,
   userEmail: null,
@@ -98,24 +105,7 @@ const useAppStore = create<AppState>((set, get) => ({
   darkMode: true,
   setSongs: (songs) => set({ songs: songs.map(normalizeSong) }),
   setSetlists: (newSetlists) => {
-    const { uid, setlists: oldSetlists } = get();
     set({ setlists: newSetlists });
-    if (!uid) return;
-    const oldIds = new Set(oldSetlists.map((sl) => sl.id));
-    const newIds = new Set(newSetlists.map((sl) => sl.id));
-    // Upload new or changed setlists only
-    for (const sl of newSetlists) {
-      const old = oldSetlists.find((o) => o.id === sl.id);
-      if (!old || stableJSON(old) !== stableJSON(sl)) {
-        void uploadSingleSetlist(uid, sl).catch((e) => console.error('Setlist push failed:', e));
-      }
-    }
-    // Delete only setlists that were actually removed locally
-    for (const sl of oldSetlists) {
-      if (!newIds.has(sl.id)) {
-        void deleteSetlistFromFirestore(uid, sl.id).catch((e) => console.error('Setlist delete failed:', e));
-      }
-    }
   },
   updateSong: (id, updates) => {
     const { songs, userEmail } = get();
@@ -126,7 +116,6 @@ const useAppStore = create<AppState>((set, get) => ({
       const entry: ModificationEntry = { userEmail: email, action: 'edited', timestamp: now };
       return { ...s, ...updates, lastModifiedBy: email, lastModifiedAt: now, modificationHistory: [...(s.modificationHistory || []), entry] };
     }) });
-    void get().pushToCloud();
   },
   deleteSong: (id) => {
     const { songs, currentSongId, uid } = get();
@@ -135,7 +124,6 @@ const useAppStore = create<AppState>((set, get) => ({
       currentSongId: currentSongId === id ? null : currentSongId,
     });
     if (uid) void deleteSongFromFirestore(uid, id).catch(e => console.error('Cloud delete failed:', e));
-    void get().pushToCloud();
   },
   setCurrentSongId: (id) => {
     const songTempo = get().songs.find((song) => song.id === id)?.tempo ?? 90;
@@ -207,7 +195,7 @@ const useAppStore = create<AppState>((set, get) => ({
     const result: SyncResult = {
       songsUploaded: 0, songsDownloaded: 0,
       setlistsUploaded: 0, setlistsDownloaded: 0,
-      overwritten: 0, skipped: 0,
+      overwritten: 0, skipped: 0, warnings: [],
     };
 
     const [cloudSongs, cloudSetlists] = await Promise.all([
@@ -230,9 +218,16 @@ const useAppStore = create<AppState>((set, get) => ({
         result.songsUploaded++;
       } else {
         if (!songsContentEqual(song, cloudSong)) {
+          const tsDiff = compareTimestamps(song.lastModifiedAt, cloudSong.lastModifiedAt);
+          if (tsDiff < 0) {
+            // Cloud is newer — protect it
+            result.skipped++;
+            result.warnings.push(`"${song.title}" skipped: cloud version is newer (${cloudSong.lastModifiedAt ? new Date(cloudSong.lastModifiedAt).toLocaleString() : 'unknown'})`);
+            continue;
+          }
           const shouldOverwrite = await confirmFn(
             'Duplicate Song',
-            `"${song.title}" by ${song.artist} already exists in cloud with different content.\n\nOverwrite the cloud version with your local version?`,
+            `"${song.title}" by ${song.artist} already exists in cloud with different content.\n\nLocal modified: ${song.lastModifiedAt ? new Date(song.lastModifiedAt).toLocaleString() : 'unknown'}\nCloud modified: ${cloudSong.lastModifiedAt ? new Date(cloudSong.lastModifiedAt).toLocaleString() : 'unknown'}\n\nOverwrite the cloud version with your local version?`,
           );
           if (shouldOverwrite) {
             if (cloudSong.id !== song.id) {
@@ -263,9 +258,16 @@ const useAppStore = create<AppState>((set, get) => ({
       } else {
         const songIdsMatch = JSON.stringify(cloudSetlist.songIds) === JSON.stringify(setlist.songIds);
         if (!songIdsMatch) {
+          const tsDiff = compareTimestamps(setlist.lastModifiedAt, cloudSetlist.lastModifiedAt);
+          if (tsDiff < 0) {
+            // Cloud is newer — protect it
+            result.skipped++;
+            result.warnings.push(`Setlist "${setlist.name}" skipped: cloud version is newer`);
+            continue;
+          }
           const shouldOverwrite = await confirmFn(
             'Duplicate Setlist',
-            `Setlist "${setlist.name}" already exists in cloud with different songs.\n\nOverwrite the cloud version?`,
+            `Setlist "${setlist.name}" already exists in cloud with different songs.\n\nLocal modified: ${setlist.lastModifiedAt ? new Date(setlist.lastModifiedAt).toLocaleString() : 'unknown'}\nCloud modified: ${cloudSetlist.lastModifiedAt ? new Date(cloudSetlist.lastModifiedAt).toLocaleString() : 'unknown'}\n\nOverwrite the cloud version?`,
           );
           if (shouldOverwrite) {
             if (cloudSetlist.id !== setlist.id) {
@@ -290,7 +292,7 @@ const useAppStore = create<AppState>((set, get) => ({
     const result: SyncResult = {
       songsUploaded: 0, songsDownloaded: 0,
       setlistsUploaded: 0, setlistsDownloaded: 0,
-      overwritten: 0, skipped: 0,
+      overwritten: 0, skipped: 0, warnings: [],
     };
 
     const [cloudSongs, cloudSetlists] = await Promise.all([
@@ -320,7 +322,7 @@ const useAppStore = create<AppState>((set, get) => ({
         if (!songsContentEqual(localSong, cloudSong)) {
           const shouldOverwrite = await confirmFn(
             'Duplicate Song',
-            `"${cloudSong.title}" by ${cloudSong.artist} exists locally with different content.\n\nOverwrite your local version with the cloud version?`,
+            `"${cloudSong.title}" by ${cloudSong.artist} exists locally with different content.\n\nLocal modified: ${localSong.lastModifiedAt ? new Date(localSong.lastModifiedAt).toLocaleString() : 'unknown'}\nCloud modified: ${cloudSong.lastModifiedAt ? new Date(cloudSong.lastModifiedAt).toLocaleString() : 'unknown'}\n\nOverwrite your local version with the cloud version?`,
           );
           if (shouldOverwrite) {
             const idx = newSongs.findIndex((s) => s.id === localSong.id);
@@ -359,7 +361,7 @@ const useAppStore = create<AppState>((set, get) => ({
         if (!songIdsMatch) {
           const shouldOverwrite = await confirmFn(
             'Duplicate Setlist',
-            `Setlist "${cloudSetlist.name}" exists locally with different songs.\n\nOverwrite your local version with the cloud version?`,
+            `Setlist "${cloudSetlist.name}" exists locally with different songs.\n\nLocal modified: ${localSetlist.lastModifiedAt ? new Date(localSetlist.lastModifiedAt).toLocaleString() : 'unknown'}\nCloud modified: ${cloudSetlist.lastModifiedAt ? new Date(cloudSetlist.lastModifiedAt).toLocaleString() : 'unknown'}\n\nOverwrite your local version with the cloud version?`,
           );
           if (shouldOverwrite) {
             const idx = newSetlists.findIndex((sl) => sl.id === localSetlist.id);
@@ -392,7 +394,7 @@ const useAppStore = create<AppState>((set, get) => ({
     return fetchSetlistsFromFirestore(uid);
   },
 
-  uploadSetlist: async (setlistId: string): Promise<{ songsUploaded: number }> => {
+  uploadSetlist: async (setlistId: string): Promise<{ songsUploaded: number; warnings: string[] }> => {
     const { uid, songs, setlists } = get();
     if (!uid) throw new Error('Not signed in');
 
@@ -408,31 +410,45 @@ const useAppStore = create<AppState>((set, get) => ({
       }
     }
 
-    // Upload the setlist itself
-    await uploadSingleSetlist(uid, setlist);
-
-    // Check which songs in the setlist are missing from cloud
+    // Ensure cloud has the latest versions of all songs referenced by this setlist.
+    // This avoids stale chord/content data across devices.
     const cloudSongs = await fetchSongsFromFirestore(uid);
-    const cloudSongIds = new Set(cloudSongs.map((s) => s.id));
-    const cloudSongKeys = new Set(
-      cloudSongs.map((s) => `${s.title.trim().toLowerCase()}::${s.artist.trim().toLowerCase()}`)
-    );
+    const cloudSongById = new Map(cloudSongs.map((s) => [s.id, s] as const));
 
     let songsUploaded = 0;
+    const warnings: string[] = [];
     for (const songId of setlist.songIds) {
-      if (cloudSongIds.has(songId)) continue;
       const localSong = songs.find((s) => s.id === songId);
       if (!localSong) continue;
-      const key = `${localSong.title.trim().toLowerCase()}::${localSong.artist.trim().toLowerCase()}`;
-      if (cloudSongKeys.has(key)) continue; // same song by title+artist already in cloud
-      await uploadSingleSong(uid, localSong);
-      songsUploaded++;
+
+      const cloudSong = cloudSongById.get(songId);
+      if (!cloudSong) {
+        // Not in cloud yet — upload
+        await uploadSingleSong(uid, localSong);
+        cloudSongById.set(songId, localSong);
+        songsUploaded++;
+      } else if (!songsContentEqual(localSong, cloudSong)) {
+        // Content differs — check timestamps
+        const tsDiff = compareTimestamps(localSong.lastModifiedAt, cloudSong.lastModifiedAt);
+        if (tsDiff < 0) {
+          // Cloud is newer — don't overwrite
+          warnings.push(`"${localSong.title}" skipped: cloud version is newer (${cloudSong.lastModifiedAt ? new Date(cloudSong.lastModifiedAt).toLocaleString() : 'unknown'})`);
+        } else {
+          // Local is newer or same age — upload
+          await uploadSingleSong(uid, localSong);
+          cloudSongById.set(songId, localSong);
+          songsUploaded++;
+        }
+      }
     }
 
-    return { songsUploaded };
+    // Upload setlist after songs so all referenced song IDs exist in cloud.
+    await uploadSingleSetlist(uid, setlist);
+
+    return { songsUploaded, warnings };
   },
 
-  downloadSetlist: async (cloudSetlist: Setlist): Promise<{ songsDownloaded: number }> => {
+  downloadSetlist: async (cloudSetlist: Setlist): Promise<{ songsDownloaded: number; warnings: string[] }> => {
     const { uid, songs, setlists } = get();
     if (!uid) throw new Error('Not signed in');
 
@@ -449,28 +465,43 @@ const useAppStore = create<AppState>((set, get) => ({
       newSetlists.push(cloudSetlist);
     }
 
-    // Download songs referenced in the setlist that we don't have locally
-    const localSongIds = new Set(songs.map((s) => s.id));
-    const localSongKeys = new Set(
-      songs.map((s) => `${s.title.trim().toLowerCase()}::${s.artist.trim().toLowerCase()}`)
-    );
-    const missingSongIds = cloudSetlist.songIds.filter((id) => !localSongIds.has(id));
+    // Fetch all songs referenced by this setlist and refresh local copies as needed.
+    // This keeps chord edits in sync even when song IDs already exist locally.
+    const referencedSongIds = [...new Set(cloudSetlist.songIds)];
 
     let songsDownloaded = 0;
+    const warnings: string[] = [];
     const newSongs = [...songs];
 
-    if (missingSongIds.length > 0) {
-      const cloudSongs = await fetchSongsByIds(uid, missingSongIds);
+    if (referencedSongIds.length > 0) {
+      const cloudSongs = await fetchSongsByIds(uid, referencedSongIds);
+      const fetchedIds = new Set(cloudSongs.map((s) => s.id));
+
+      // Warn about songs referenced by setlist but missing from cloud
+      for (const id of referencedSongIds) {
+        if (!fetchedIds.has(id)) {
+          const localSong = newSongs.find((s) => s.id === id);
+          warnings.push(`"${localSong?.title || id}" is in the setlist but missing from cloud`);
+        }
+      }
+
       for (const cs of cloudSongs) {
-        const key = `${cs.title.trim().toLowerCase()}::${cs.artist.trim().toLowerCase()}`;
-        if (localSongKeys.has(key)) continue; // already have by title+artist
-        newSongs.push(normalizeSong(cs));
-        songsDownloaded++;
+        const idx = newSongs.findIndex((s) => s.id === cs.id);
+        if (idx < 0) {
+          newSongs.push(normalizeSong(cs));
+          songsDownloaded++;
+          continue;
+        }
+
+        if (!songsContentEqual(newSongs[idx], cs)) {
+          newSongs[idx] = normalizeSong(cs);
+          songsDownloaded++;
+        }
       }
     }
 
     set({ songs: newSongs, setlists: newSetlists });
-    return { songsDownloaded };
+    return { songsDownloaded, warnings };
   },
 }));
 

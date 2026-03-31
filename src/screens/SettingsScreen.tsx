@@ -18,8 +18,11 @@ const formatSyncResult = (result: SyncResult, direction: 'push' | 'pull'): strin
   }
   if (result.overwritten > 0) parts.push(`${result.overwritten} overwritten`);
   if (result.skipped > 0) parts.push(`${result.skipped} skipped`);
-  if (parts.length === 0) return '✓ Everything is already in sync';
-  return '✓ ' + parts.join(', ');
+  const main = parts.length === 0 ? '✓ Everything is already in sync' : '✓ ' + parts.join(', ');
+  if (result.warnings.length > 0) {
+    return main + '\n⚠ ' + result.warnings.join('\n⚠ ');
+  }
+  return main;
 };
 
 const SettingsScreen = () => {
@@ -91,7 +94,11 @@ const SettingsScreen = () => {
       const result = await uploadSetlist(setlistId);
       const sl = setlists.find((s) => s.id === setlistId);
       const songMsg = result.songsUploaded > 0 ? `, ${result.songsUploaded} song(s) uploaded` : '';
-      setPickerMsg(`✓ "${sl?.name}" uploaded${songMsg}`);
+      let msg = `✓ "${sl?.name}" uploaded${songMsg}`;
+      if (result.warnings.length > 0) {
+        msg += '\n⚠ ' + result.warnings.join('\n⚠ ');
+      }
+      setPickerMsg(msg);
     } catch (e) {
       const msg = e instanceof Error ? e.message : 'Unknown error';
       setPickerMsg(`✗ Upload failed: ${msg}`);
@@ -106,7 +113,11 @@ const SettingsScreen = () => {
     try {
       const result = await downloadSetlist(setlist);
       const songMsg = result.songsDownloaded > 0 ? `, ${result.songsDownloaded} song(s) downloaded` : '';
-      setPickerMsg(`✓ "${setlist.name}" downloaded${songMsg}`);
+      let msg = `✓ "${setlist.name}" downloaded${songMsg}`;
+      if (result.warnings.length > 0) {
+        msg += '\n⚠ ' + result.warnings.join('\n⚠ ');
+      }
+      setPickerMsg(msg);
     } catch (e) {
       const msg = e instanceof Error ? e.message : 'Unknown error';
       setPickerMsg(`✗ Download failed: ${msg}`);
@@ -167,7 +178,7 @@ const SettingsScreen = () => {
           </button>
         </div>
         {syncMsg !== '' && (
-          <p className={`sync-msg ${syncMsg.startsWith('✗') ? 'error' : ''}`}>{syncMsg}</p>
+          <p className={`sync-msg ${syncMsg.startsWith('✗') ? 'error' : syncMsg.includes('⚠') ? 'warning' : ''}`}>{syncMsg}</p>
         )}
       </div>
 
@@ -206,7 +217,7 @@ const SettingsScreen = () => {
               <div className="picker-loading"><span className="spinner-small" /></div>
             )}
             {pickerMsg && (
-              <p className={`picker-msg ${pickerMsg.startsWith('✗') ? 'error' : ''}`}>{pickerMsg}</p>
+              <p className={`picker-msg ${pickerMsg.startsWith('✗') ? 'error' : pickerMsg.includes('⚠') ? 'warning' : ''}`}>{pickerMsg}</p>
             )}
             <div className="picker-list">
               {pickerMode === 'upload' && setlists.map((sl) => (

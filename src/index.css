@@ -1051,9 +1051,13 @@ a { color: #4FC3F7; text-decoration: none; }
   padding: 12px 16px;
   font-size: 14px;
   color: #66BB6A;
+  white-space: pre-line;
 }
 .sync-msg.error {
   color: #FF5252;
+}
+.sync-msg.warning {
+  color: #FFA726;
 }
 
 /* ===== Setlist Picker Modal ===== */
@@ -1104,9 +1108,13 @@ a { color: #4FC3F7; text-decoration: none; }
   padding: 10px 16px;
   font-size: 14px;
   color: #66BB6A;
+  white-space: pre-line;
 }
 .picker-msg.error {
   color: #FF5252;
+}
+.picker-msg.warning {
+  color: #FFA726;
 }
 .picker-list {
   overflow-y: auto;
