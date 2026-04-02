@@ -13,6 +13,7 @@ import {
   deriveUsers,
   computeStats,
   exportDataAsJson,
+  checkIsAdmin,
 } from '../services/adminService';
 import { UserStatus } from '../types';
 import { Song, Setlist, AdminUser, AdminStats, AdminView } from '../types';
@@ -77,33 +78,53 @@ const AdminDashboard: React.FC = () => {
   // Load data
   const loadData = async () => {
     try {
-      const [cloudSongs, cloudSetlists, registeredUsers] = await Promise.all([
+      // Ensure the config/admins doc is seeded so Firestore rules recognise us
+      if (currentUserEmail) {
+        await checkIsAdmin(currentUserEmail);
+      }
+
+      // Fetch each source independently so one failure doesn't block the rest
+      const [songsResult, setlistsResult, usersResult] = await Promise.allSettled([
         fetchAllCloudSongs(),
         fetchAllCloudSetlists(),
         fetchRegisteredUsers(),
       ]);
+
+      const cloudSongs = songsResult.status === 'fulfilled' ? songsResult.value : [];
+      const cloudSetlists = setlistsResult.status === 'fulfilled' ? setlistsResult.value : [];
+      const registeredUsers = usersResult.status === 'fulfilled' ? usersResult.value : [];
+
+      if (songsResult.status === 'rejected') console.error('Failed to fetch songs:', songsResult.reason);
+      if (setlistsResult.status === 'rejected') console.error('Failed to fetch setlists:', setlistsResult.reason);
+      if (usersResult.status === 'rejected') console.error('Failed to fetch users:', usersResult.reason);
+
       setSongs(cloudSongs);
       setSetlists(cloudSetlists);
 
       const activityUsers = deriveUsers(cloudSongs, cloudSetlists);
       const activityByEmail = new Map(activityUsers.map((u) => [u.email.toLowerCase(), u]));
-      const mergedUsers = registeredUsers
-        .map((u) => {
-          const activity = activityByEmail.get(u.email.toLowerCase());
-          return {
-            ...u,
-            status: u.status || 'active',
-            songsCount: activity?.songsCount ?? 0,
-            setlistsCount: activity?.setlistsCount ?? 0,
-            lastActive: activity?.lastActive ?? u.lastActive,
-          };
-        })
-        .sort((a, b) => {
-          if (a.lastActive && b.lastActive) return b.lastActive.localeCompare(a.lastActive);
-          if (a.lastActive) return -1;
-          if (b.lastActive) return 1;
-          return a.email.localeCompare(b.email);
-        });
+
+      // If we got registered users from Firestore, merge with activity data
+      // Otherwise fall back to activity-derived users
+      const mergedUsers = registeredUsers.length > 0
+        ? registeredUsers
+          .map((u) => {
+            const activity = activityByEmail.get(u.email.toLowerCase());
+            return {
+              ...u,
+              status: u.status || 'active',
+              songsCount: activity?.songsCount ?? 0,
+              setlistsCount: activity?.setlistsCount ?? 0,
+              lastActive: activity?.lastActive ?? u.lastActive,
+            };
+          })
+          .sort((a, b) => {
+            if (a.lastActive && b.lastActive) return b.lastActive.localeCompare(a.lastActive);
+            if (a.lastActive) return -1;
+            if (b.lastActive) return 1;
+            return a.email.localeCompare(b.email);
+          })
+        : activityUsers;
 
       setUsers(mergedUsers);
       setStats(computeStats(cloudSongs, cloudSetlists, mergedUsers));

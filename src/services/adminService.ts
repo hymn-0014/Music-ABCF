@@ -104,6 +104,7 @@ export function deriveUsers(songs: Song[], setlists: Setlist[]): AdminUser[] {
       userMap.set(email, {
         uid: email, // use email as identifier since we derive from data
         email,
+        status: 'active' as UserStatus,
         songsCount: 1,
         setlistsCount: 0,
         lastActive: song.lastModifiedAt,
@@ -124,6 +125,7 @@ export function deriveUsers(songs: Song[], setlists: Setlist[]): AdminUser[] {
       userMap.set(email, {
         uid: email,
         email,
+        status: 'active' as UserStatus,
         songsCount: 0,
         setlistsCount: 1,
         lastActive: setlist.lastModifiedAt,
