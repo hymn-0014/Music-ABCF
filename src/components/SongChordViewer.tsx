@@ -28,6 +28,7 @@ const SongChordViewer: React.FC<SongChordViewerProps> = ({ song }) => {
   const updateSong = useAppStore((state) => state.updateSong);
   const [showPlayback, setShowPlayback] = useState(false);
   const [editMode, setEditMode] = useState(false);
+  const [ribbonCollapsed, setRibbonCollapsed] = useState(false);
   const audioContextRef = useRef<AudioContext | null>(null);
 
   useEffect(() => {
@@ -62,46 +63,56 @@ const SongChordViewer: React.FC<SongChordViewerProps> = ({ song }) => {
 
   return (
     <div className="song-chord-viewer">
-      <div className="toolbar">
-        <div className="toolbar-left">
-          <TransposeControl
-            transpose={transpose}
-            accidental={accidental}
-            onTransposeChange={setTranspose}
-            onAccidentalChange={setAccidental}
-          />
-        </div>
-        <div className="toolbar-right">
-          <div className="toolbar-speed">
-            <button className="round-btn sm" onClick={() => setAutoScrollSpeed(autoScrollSpeed - 5)}>-</button>
-            <span className="toolbar-speed-value">{autoScrollSpeed}px/s</span>
-            <button className="round-btn sm" onClick={() => setAutoScrollSpeed(autoScrollSpeed + 5)}>+</button>
+      <div className={`controls-ribbon${ribbonCollapsed ? ' ribbon-collapsed' : ''}`}>
+        <div className="toolbar">
+          <div className="toolbar-left">
+            <TransposeControl
+              transpose={transpose}
+              accidental={accidental}
+              onTransposeChange={setTranspose}
+              onAccidentalChange={setAccidental}
+            />
+          </div>
+          <div className="toolbar-right">
+            <div className="toolbar-speed">
+              <button className="round-btn sm" onClick={() => setAutoScrollSpeed(autoScrollSpeed - 5)}>-</button>
+              <span className="toolbar-speed-value">{autoScrollSpeed}px/s</span>
+              <button className="round-btn sm" onClick={() => setAutoScrollSpeed(autoScrollSpeed + 5)}>+</button>
+              <button
+                className={`toggle-pill sm ${autoScrollEnabled ? 'active' : ''}`}
+                onClick={() => setAutoScrollEnabled(!autoScrollEnabled)}
+              >
+                {autoScrollEnabled ? 'Stop' : 'Scroll'}
+              </button>
+            </div>
             <button
-              className={`toggle-pill sm ${autoScrollEnabled ? 'active' : ''}`}
-              onClick={() => setAutoScrollEnabled(!autoScrollEnabled)}
+              className={`toolbar-btn ${showPlayback ? 'active' : ''}`}
+              onClick={() => setShowPlayback(!showPlayback)}
             >
-              {autoScrollEnabled ? 'Stop' : 'Scroll'}
+              ▶
+            </button>
+            <button
+              className={`toolbar-btn ${editMode ? 'active' : ''}`}
+              onClick={() => setEditMode(!editMode)}
+              title="Toggle line edit mode"
+            >
+              ♫
             </button>
           </div>
-          <button
-            className={`toolbar-btn ${showPlayback ? 'active' : ''}`}
-            onClick={() => setShowPlayback(!showPlayback)}
-          >
-            ▶
-          </button>
-          <button
-            className={`toolbar-btn ${editMode ? 'active' : ''}`}
-            onClick={() => setEditMode(!editMode)}
-            title="Toggle line edit mode"
-          >
-            ♫
-          </button>
         </div>
+        <ChordDisplay
+          notation={notation}
+          onToggle={() => setNotation(notation === 'standard' ? 'nashville' : 'standard')}
+        />
       </div>
-      <ChordDisplay
-        notation={notation}
-        onToggle={() => setNotation(notation === 'standard' ? 'nashville' : 'standard')}
-      />
+      <button
+        className="ribbon-toggle-btn"
+        onClick={() => setRibbonCollapsed(!ribbonCollapsed)}
+        title={ribbonCollapsed ? 'Expand controls' : 'Collapse controls'}
+        aria-expanded={!ribbonCollapsed}
+      >
+        {ribbonCollapsed ? '▼' : '▲'}
+      </button>
       {showPlayback && (
         <PlaybackControls
           tempo={tempo}
