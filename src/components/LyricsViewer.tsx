@@ -14,7 +14,7 @@ interface LyricsViewerProps {
   onLinesChange?: (newLines: ChordLyricLine[]) => void;
 }
 
-const CHORD_COLOR = '#0F5E86';
+const CHORD_COLOR = '#4FC3F7';
 const SECTION_PATTERN = /^\[.*\]$/;
 const CHORD_PATTERN = /(?:[A-G][#b]?(?:maj|min|m|dim|aug|sus|add|M)?(?:\d+)?(?:(?:sus|add|aug|dim|maj|min|m|b|#)\d*)*(?:\([^)]*\))?(?:\/[A-G][#b]?)?|b?[1-7][#b]?(?:maj|min|m|dim|aug|sus|add|M)?(?:\d+)?(?:(?:sus|add|aug|dim|maj|min|m|b|#)\d*)*(?:\([^)]*\))?(?:\/b?[1-7][#b]?)?)/g;
 
@@ -44,6 +44,7 @@ const LyricsViewer: React.FC<LyricsViewerProps> = ({
 }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const isAutoScrollingRef = useRef(false);
+  const isEditingRef = useRef(false);
 
   useEffect(() => {
     if (!autoScrollEnabled) { isAutoScrollingRef.current = false; return; }
@@ -60,14 +61,16 @@ const LyricsViewer: React.FC<LyricsViewerProps> = ({
     return () => { clearInterval(interval); isAutoScrollingRef.current = false; };
   }, [autoScrollEnabled, autoScrollSpeed]);
 
-  // Reset scroll on song change
+  // Reset scroll on song change (but not when editing chord lines)
   useEffect(() => {
+    if (isEditingRef.current) { isEditingRef.current = false; return; }
     if (scrollRef.current) scrollRef.current.scrollTop = 0;
   }, [lines.length]);
 
   // Mark a lyric-only line as a chord line (merge with next lyric line if possible)
   const markAsChords = (index: number) => {
     if (!onLinesChange) return;
+    isEditingRef.current = true;
     const newLines = [...lines];
     const current = newLines[index];
     if (!current.lyrics || current.chords) return; // only for lyric-only lines
@@ -86,6 +89,7 @@ const LyricsViewer: React.FC<LyricsViewerProps> = ({
   // Mark a chord line back as a lyric line (split if it had lyrics)
   const markAsLyrics = (index: number) => {
     if (!onLinesChange) return;
+    isEditingRef.current = true;
     const newLines = [...lines];
     const current = newLines[index];
     if (!current.chords) return;

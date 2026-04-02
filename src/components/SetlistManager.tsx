@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import { Song } from '../types';
 
 interface SetlistManagerProps {
@@ -9,17 +9,8 @@ interface SetlistManagerProps {
 
 const SetlistManager: React.FC<SetlistManagerProps> = ({ availableSongs, songIds, onReorder }) => {
   const [filterText, setFilterText] = useState('');
-
-  const moveItem = useCallback(
-    (fromIndex: number, direction: number) => {
-      const toIndex = fromIndex + direction;
-      if (toIndex < 0 || toIndex >= songIds.length) return;
-      const next = [...songIds];
-      [next[fromIndex], next[toIndex]] = [next[toIndex], next[fromIndex]];
-      onReorder(next);
-    },
-    [songIds, onReorder],
-  );
+  const dragIndexRef = useRef<number | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
 
   const removeSong = useCallback(
     (index: number) => {
@@ -36,6 +27,78 @@ const SetlistManager: React.FC<SetlistManagerProps> = ({ availableSongs, songIds
     [songIds, onReorder],
   );
 
+  const handleDragStart = (index: number) => {
+    dragIndexRef.current = index;
+  };
+
+  const handleDragOver = (e: React.DragEvent, index: number) => {
+    e.preventDefault();
+    setDragOverIndex(index);
+  };
+
+  const handleDragLeave = () => {
+    setDragOverIndex(null);
+  };
+
+  const handleDrop = (e: React.DragEvent, toIndex: number) => {
+    e.preventDefault();
+    const fromIndex = dragIndexRef.current;
+    if (fromIndex === null || fromIndex === toIndex) {
+      dragIndexRef.current = null;
+      setDragOverIndex(null);
+      return;
+    }
+    const next = [...songIds];
+    const [moved] = next.splice(fromIndex, 1);
+    next.splice(toIndex, 0, moved);
+    onReorder(next);
+    dragIndexRef.current = null;
+    setDragOverIndex(null);
+  };
+
+  const handleDragEnd = () => {
+    dragIndexRef.current = null;
+    setDragOverIndex(null);
+  };
+
+  // Touch drag support
+  const touchIndexRef = useRef<number | null>(null);
+  const touchCurrentRef = useRef<number | null>(null);
+
+  const handleTouchStart = (index: number) => {
+    touchIndexRef.current = index;
+    touchCurrentRef.current = index;
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    const touch = e.touches[0];
+    const element = document.elementFromPoint(touch.clientX, touch.clientY);
+    if (element) {
+      const row = element.closest('[data-drag-index]') as HTMLElement | null;
+      if (row) {
+        const idx = parseInt(row.dataset.dragIndex ?? '', 10);
+        if (!isNaN(idx)) {
+          touchCurrentRef.current = idx;
+          setDragOverIndex(idx);
+        }
+      }
+    }
+  };
+
+  const handleTouchEnd = () => {
+    const fromIndex = touchIndexRef.current;
+    const toIndex = touchCurrentRef.current;
+    if (fromIndex !== null && toIndex !== null && fromIndex !== toIndex) {
+      const next = [...songIds];
+      const [moved] = next.splice(fromIndex, 1);
+      next.splice(toIndex, 0, moved);
+      onReorder(next);
+    }
+    touchIndexRef.current = null;
+    touchCurrentRef.current = null;
+    setDragOverIndex(null);
+  };
+
   const songMap = new Map(availableSongs.map((s) => [s.id, s]));
   const filteredAvailable = availableSongs.filter(
     (s) => !songIds.includes(s.id) && s.title.toLowerCase().includes(filterText.toLowerCase()),
@@ -46,11 +109,23 @@ const SetlistManager: React.FC<SetlistManagerProps> = ({ availableSongs, songIds
       <h3 className="setlist-heading">Setlist</h3>
       <div className="setlist-items">
         {songIds.map((id, index) => (
-          <div key={id} className="setlist-row">
+          <div
+            key={id}
+            className={`setlist-row${dragOverIndex === index ? ' setlist-row-dragover' : ''}`}
+            data-drag-index={index}
+            draggable
+            onDragStart={() => handleDragStart(index)}
+            onDragOver={(e) => handleDragOver(e, index)}
+            onDragLeave={handleDragLeave}
+            onDrop={(e) => handleDrop(e, index)}
+            onDragEnd={handleDragEnd}
+            onTouchStart={() => handleTouchStart(index)}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
+          >
+            <span className="setlist-drag-handle" title="Drag to reorder">☰</span>
             <span className="setlist-song-title">{songMap.get(id)?.title ?? id}</span>
-            <button className="setlist-action" onClick={() => moveItem(index, -1)}>▲</button>
-            <button className="setlist-action" onClick={() => moveItem(index, 1)}>▼</button>
-            <button className="setlist-remove" onClick={() => removeSong(index)}>✕</button>
+            <button className="setlist-remove" onClick={() => removeSong(index)} title="Remove from setlist">🗑️</button>
           </div>
         ))}
       </div>

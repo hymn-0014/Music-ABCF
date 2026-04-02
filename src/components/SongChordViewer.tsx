@@ -63,6 +63,40 @@ const SongChordViewer: React.FC<SongChordViewerProps> = ({ song }) => {
 
   return (
     <div className="song-chord-viewer">
+      {/* Always-visible action bar */}
+      <div className="action-bar">
+        <button
+          className={`action-btn ${autoScrollEnabled ? 'active' : ''}`}
+          onClick={() => setAutoScrollEnabled(!autoScrollEnabled)}
+          title={autoScrollEnabled ? 'Stop scroll' : 'Start scroll'}
+        >
+          {autoScrollEnabled ? '⏸' : '▶'} Scroll
+        </button>
+        <button
+          className={`action-btn ${showPlayback ? 'active' : ''}`}
+          onClick={() => setShowPlayback(!showPlayback)}
+          title="Playback controls"
+        >
+          🎵 Playback
+        </button>
+        <button
+          className={`action-btn ${editMode ? 'active' : ''}`}
+          onClick={() => setEditMode(!editMode)}
+          title="Toggle line edit mode"
+        >
+          ♫ Edit
+        </button>
+        <button
+          className={`action-btn ribbon-expand-btn ${!ribbonCollapsed ? 'active' : ''}`}
+          onClick={() => setRibbonCollapsed(!ribbonCollapsed)}
+          title={ribbonCollapsed ? 'Show controls' : 'Hide controls'}
+          aria-expanded={!ribbonCollapsed}
+        >
+          {ribbonCollapsed ? '▼ More' : '▲ Less'}
+        </button>
+      </div>
+
+      {/* Collapsible detailed controls */}
       <div className={`controls-ribbon${ribbonCollapsed ? ' ribbon-collapsed' : ''}`}>
         <div className="toolbar">
           <div className="toolbar-left">
@@ -78,53 +112,27 @@ const SongChordViewer: React.FC<SongChordViewerProps> = ({ song }) => {
               <button className="round-btn sm" onClick={() => setAutoScrollSpeed(autoScrollSpeed - 5)}>-</button>
               <span className="toolbar-speed-value">{autoScrollSpeed}px/s</span>
               <button className="round-btn sm" onClick={() => setAutoScrollSpeed(autoScrollSpeed + 5)}>+</button>
-              <button
-                className={`toggle-pill sm ${autoScrollEnabled ? 'active' : ''}`}
-                onClick={() => setAutoScrollEnabled(!autoScrollEnabled)}
-              >
-                {autoScrollEnabled ? 'Stop' : 'Scroll'}
-              </button>
             </div>
-            <button
-              className={`toolbar-btn ${showPlayback ? 'active' : ''}`}
-              onClick={() => setShowPlayback(!showPlayback)}
-            >
-              ▶
-            </button>
-            <button
-              className={`toolbar-btn ${editMode ? 'active' : ''}`}
-              onClick={() => setEditMode(!editMode)}
-              title="Toggle line edit mode"
-            >
-              ♫
-            </button>
           </div>
         </div>
         <ChordDisplay
           notation={notation}
           onToggle={() => setNotation(notation === 'standard' ? 'nashville' : 'standard')}
         />
+        {showPlayback && (
+          <PlaybackControls
+            tempo={tempo}
+            metronomeEnabled={metronomeEnabled}
+            autoScrollEnabled={autoScrollEnabled}
+            autoScrollSpeed={autoScrollSpeed}
+            onTempoChange={setTempo}
+            onMetronomeToggle={() => setMetronomeEnabled(!metronomeEnabled)}
+            onAutoScrollToggle={() => setAutoScrollEnabled(!autoScrollEnabled)}
+            onAutoScrollSpeedChange={setAutoScrollSpeed}
+          />
+        )}
       </div>
-      <button
-        className="ribbon-toggle-btn"
-        onClick={() => setRibbonCollapsed(!ribbonCollapsed)}
-        title={ribbonCollapsed ? 'Expand controls' : 'Collapse controls'}
-        aria-expanded={!ribbonCollapsed}
-      >
-        {ribbonCollapsed ? '▼' : '▲'}
-      </button>
-      {showPlayback && (
-        <PlaybackControls
-          tempo={tempo}
-          metronomeEnabled={metronomeEnabled}
-          autoScrollEnabled={autoScrollEnabled}
-          autoScrollSpeed={autoScrollSpeed}
-          onTempoChange={setTempo}
-          onMetronomeToggle={() => setMetronomeEnabled(!metronomeEnabled)}
-          onAutoScrollToggle={() => setAutoScrollEnabled(!autoScrollEnabled)}
-          onAutoScrollSpeedChange={setAutoScrollSpeed}
-        />
-      )}
+
       <LyricsViewer
         lines={song.lines}
         transpose={transpose}
