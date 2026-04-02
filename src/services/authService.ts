@@ -3,6 +3,7 @@ import {
   GoogleAuthProvider,
   signInWithPopup,
   signInWithEmailAndPassword,
+  updateProfile,
   signOut as firebaseSignOut,
   onAuthStateChanged,
   User,
@@ -14,8 +15,9 @@ export function onAuthChange(callback: (user: User | null) => void) {
   return onAuthStateChanged(auth, callback);
 }
 
-export async function signUp(email: string, password: string): Promise<User> {
+export async function signUp(email: string, password: string, name: string): Promise<User> {
   const cred = await createUserWithEmailAndPassword(auth, email, password);
+  await updateProfile(cred.user, { displayName: name.trim() });
   return cred.user;
 }
 

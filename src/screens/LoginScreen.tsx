@@ -9,6 +9,7 @@ import {
 const BASE = import.meta.env.BASE_URL;
 
 const LoginScreen = () => {
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isSignUp, setIsSignUp] = useState(false);
@@ -17,17 +18,26 @@ const LoginScreen = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const trimmedName = name.trim();
+    const trimmedEmail = email.trim();
+
     if (!email.trim() || !password.trim()) {
       setError('Please enter email and password.');
       return;
     }
+
+    if (isSignUp && !trimmedName) {
+      setError('Please enter your name.');
+      return;
+    }
+
     setLoading(true);
     setError('');
     try {
       if (isSignUp) {
-        await signUp(email.trim(), password);
+        await signUp(trimmedEmail, password, trimmedName);
       } else {
-        await signIn(email.trim(), password);
+        await signIn(trimmedEmail, password);
       }
     } catch (err: unknown) {
       setError(getAuthErrorMessage(err));
@@ -61,6 +71,16 @@ const LoginScreen = () => {
         {error && <p className="login-error">{error}</p>}
 
         <form onSubmit={handleSubmit} className="login-form">
+          {isSignUp && (
+            <input
+              type="text"
+              className="login-input"
+              placeholder="Full name"
+              autoComplete="name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+            />
+          )}
           <input
             type="email"
             className="login-input"
@@ -97,7 +117,11 @@ const LoginScreen = () => {
 
         <button
           className="login-toggle"
-          onClick={() => { setIsSignUp(!isSignUp); setError(''); }}
+          onClick={() => {
+            setIsSignUp(!isSignUp);
+            setError('');
+            setName('');
+          }}
         >
           {isSignUp ? 'Already have an account? Sign In' : "Don't have an account? Sign Up"}
         </button>

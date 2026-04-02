@@ -8,11 +8,16 @@ const INITIAL_ADMIN_EMAIL = 'hymn.0014@gmail.com';
 /** Check if a user email is in the admins list */
 export async function checkIsAdmin(email: string): Promise<boolean> {
   try {
+    const normalisedEmail = email.toLowerCase();
+    if (normalisedEmail === INITIAL_ADMIN_EMAIL) {
+      return true;
+    }
+
     const ref = doc(db, 'config', 'admins');
     const snap = await getDoc(ref);
     if (!snap.exists()) {
       // Seed the initial admin on first check
-      if (email.toLowerCase() === INITIAL_ADMIN_EMAIL) {
+      if (normalisedEmail === INITIAL_ADMIN_EMAIL) {
         await setDoc(ref, { emails: [INITIAL_ADMIN_EMAIL] });
         return true;
       }
@@ -20,7 +25,7 @@ export async function checkIsAdmin(email: string): Promise<boolean> {
     }
     const data = snap.data();
     const emails: string[] = data?.emails ?? [];
-    return emails.some((e) => e.toLowerCase() === email.toLowerCase());
+    return emails.some((e) => e.toLowerCase() === normalisedEmail);
   } catch (e) {
     console.error('Admin check failed:', e);
     return false;
