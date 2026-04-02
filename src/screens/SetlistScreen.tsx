@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import useAppStore from '../store/useAppStore';
 import SetlistManager from '../components/SetlistManager';
+import ConfirmDialog from '../components/ConfirmDialog';
 import { ModificationEntry } from '../types';
 
 const SetlistScreen = () => {
@@ -9,12 +10,14 @@ const SetlistScreen = () => {
   const songs = useAppStore((s) => s.songs);
   const setlists = useAppStore((s) => s.setlists);
   const setSetlists = useAppStore((s) => s.setSetlists);
+  const deleteSetlist = useAppStore((s) => s.deleteSetlist);
   const setCurrentSetlistId = useAppStore((s) => s.setCurrentSetlistId);
   const setCurrentSongId = useAppStore((s) => s.setCurrentSongId);
   const userEmail = useAppStore((s) => s.userEmail);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [newName, setNewName] = useState('');
   const [showHistory, setShowHistory] = useState(false);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   const addSetlist = () => {
     if (!newName.trim()) return;
@@ -26,9 +29,7 @@ const SetlistScreen = () => {
     setNewName('');
   };
 
-  const deleteSetlist = (id: string) => {
-    setSetlists(setlists.filter((sl) => sl.id !== id));
-  };
+  const confirmingSetlist = setlists.find((sl) => sl.id === confirmDeleteId);
 
   const editing = setlists.find((sl) => sl.id === editingId);
 
@@ -128,13 +129,22 @@ const SetlistScreen = () => {
             </div>
             <button
               className="delete-btn"
-              onClick={(e) => { e.stopPropagation(); deleteSetlist(item.id); }}
+              title="Delete setlist"
+              onClick={(e) => { e.stopPropagation(); setConfirmDeleteId(item.id); }}
             >
-              ✕
+              🗑️
             </button>
           </div>
         ))}
       </div>
+      {confirmingSetlist && (
+        <ConfirmDialog
+          title="Delete Setlist"
+          message={`Delete "${confirmingSetlist.name}"? This removes it from your library only — not from the shared cloud.`}
+          onConfirm={() => { deleteSetlist(confirmingSetlist.id); setConfirmDeleteId(null); }}
+          onCancel={() => setConfirmDeleteId(null)}
+        />
+      )}
     </div>
   );
 };

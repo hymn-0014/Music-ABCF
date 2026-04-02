@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import useAppStore from '../store/useAppStore';
 import { parseChordsFromText } from '../services/chordExtractor';
 import { uploadSingleSong } from '../services/firebaseService';
+import ConfirmDialog from '../components/ConfirmDialog';
 
 const linesToText = (lines: { chords: string; lyrics: string }[]): string =>
   lines.map((line) => line.chords && line.chords.trim() ? `${line.chords}\n${line.lyrics}` : line.lyrics).join('\n');
@@ -24,6 +25,7 @@ const EditSongScreen = () => {
   const [status, setStatus] = useState('');
   const [cloudSyncing, setCloudSyncing] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const parsedTempo = Math.min(240, Math.max(40, Number.parseInt(tempo, 10) || 90));
 
@@ -63,10 +65,7 @@ const EditSongScreen = () => {
   };
 
   const handleDelete = () => {
-    if (window.confirm(`Delete "${song.title}"?`)) {
-      deleteSong(songId!);
-      navigate('/');
-    }
+    setShowDeleteConfirm(true);
   };
 
   return (
@@ -107,7 +106,16 @@ const EditSongScreen = () => {
         <button className="btn-success full-width" onClick={handleSaveAndSync} disabled={cloudSyncing}>
           {cloudSyncing ? 'Syncing…' : '☁️ Save & Update Cloud'}
         </button>
-        <button className="btn-danger-outlined full-width" onClick={handleDelete}>Delete Song</button>
+        <button className="btn-danger-outlined full-width" onClick={handleDelete}>🗑️ Delete Song</button>
+
+        {showDeleteConfirm && (
+          <ConfirmDialog
+            title="Delete Song"
+            message={`Delete "${song.title}"? This removes it from your library only — not from the shared cloud.`}
+            onConfirm={() => { deleteSong(songId!); navigate('/'); }}
+            onCancel={() => setShowDeleteConfirm(false)}
+          />
+        )}
 
         {status && <div className="status-box"><p className="status-text">{status}</p></div>}
 

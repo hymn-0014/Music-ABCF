@@ -19,6 +19,7 @@ import {
   loadPersonalSetlists,
   savePersonalSingleSong,
   deletePersonalSong,
+  deletePersonalSetlist,
   savePersonalSingleSetlist,
 } from '../services/firebaseService';
 
@@ -99,6 +100,7 @@ interface AppState {
   setSetlists: (setlists: Setlist[]) => void;
   updateSong: (id: string, updates: Partial<Omit<Song, 'id'>>) => void;
   deleteSong: (id: string) => void;
+  deleteSetlist: (id: string) => void;
   setCurrentSongId: (id: string | null) => void;
   setCurrentSetlistId: (id: string | null) => void;
   setTranspose: (n: number) => void;
@@ -214,6 +216,15 @@ const useAppStore = create<AppState>((set, get) => ({
     if (uid) deletePersonalSong(uid, id).catch((e) => console.warn('Personal song delete failed:', e));
     // In shared mode we do NOT auto-delete from shared cloud — the song may be used
     // by other users' setlists. Shared cloud cleanup is done explicitly via sync.
+  },
+  deleteSetlist: (id) => {
+    const { setlists, currentSetlistId, uid } = get();
+    set({
+      setlists: setlists.filter((sl) => sl.id !== id),
+      currentSetlistId: currentSetlistId === id ? null : currentSetlistId,
+    });
+    // Auto-delete from personal cloud only — NOT from shared cloud
+    if (uid) deletePersonalSetlist(uid, id).catch((e) => console.warn('Personal setlist delete failed:', e));
   },
   setCurrentSongId: (id) => {
     const { songs, songTransposeById } = get();

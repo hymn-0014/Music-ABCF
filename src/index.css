@@ -496,11 +496,15 @@ a { color: #4FC3F7; text-decoration: none; }
 .delete-btn {
   background: none;
   border: none;
-  color: #FF5252;
+  color: #E53935;
   cursor: pointer;
-  font-size: 16px;
+  font-size: 18px;
   padding: 4px 8px;
   flex-shrink: 0;
+  transition: opacity 0.15s;
+}
+.delete-btn:hover {
+  opacity: 0.75;
 }
 .fab {
   position: fixed;
@@ -991,10 +995,15 @@ a { color: #4FC3F7; text-decoration: none; }
 .setlist-remove {
   font-size: 18px;
   padding: 0 8px;
-  color: #FF5252;
+  color: #E53935;
   background: none;
   border: none;
   cursor: pointer;
+  transition: opacity 0.15s;
+  flex-shrink: 0;
+}
+.setlist-remove:hover {
+  opacity: 0.75;
 }
 .setlist-filter {
   width: 100%;
@@ -1200,6 +1209,83 @@ a { color: #4FC3F7; text-decoration: none; }
 }
 .sync-msg.warning {
   color: #FFA726;
+}
+
+/* ===== Confirm Delete Dialog ===== */
+.confirm-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1100;
+  padding: 16px;
+}
+.confirm-dialog {
+  background: #1E1E1E;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 340px;
+  padding: 28px 24px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 10px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+}
+.confirm-icon {
+  font-size: 40px;
+  line-height: 1;
+}
+.confirm-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #FFFFFF;
+  margin: 0;
+}
+.confirm-message {
+  font-size: 14px;
+  color: #aaa;
+  margin: 0;
+  line-height: 1.5;
+}
+.confirm-actions {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+  margin-top: 8px;
+}
+.confirm-cancel-btn {
+  flex: 1;
+  padding: 12px;
+  border-radius: 10px;
+  border: 1px solid #444;
+  background: transparent;
+  color: #ccc;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.confirm-cancel-btn:hover {
+  background: #2A2A2A;
+}
+.confirm-delete-btn {
+  flex: 1;
+  padding: 12px;
+  border-radius: 10px;
+  border: none;
+  background: #E53935;
+  color: #FFFFFF;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.confirm-delete-btn:hover {
+  background: #C62828;
 }
 
 /* ===== Setlist Picker Modal ===== */
@@ -1427,9 +1513,26 @@ html:not(.dark) .settings-card,
 html:not(.dark) .song-card,
 html:not(.dark) .status-box,
 html:not(.dark) .picker-modal,
+html:not(.dark) .confirm-dialog,
 html:not(.dark) .login-card {
   background: #FFFFFF;
   box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+}
+html:not(.dark) .confirm-dialog {
+  box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+}
+html:not(.dark) .confirm-title {
+  color: #111827;
+}
+html:not(.dark) .confirm-message {
+  color: #6B7280;
+}
+html:not(.dark) .confirm-cancel-btn {
+  border-color: #D1D5DB;
+  color: #374151;
+}
+html:not(.dark) .confirm-cancel-btn:hover {
+  background: #F3F4F6;
 }
 
 /* --- 4. Borders & dividers --------------------------------- */
