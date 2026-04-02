@@ -8,7 +8,7 @@ import LoginScreen from './screens/LoginScreen';
 import AddSongScreen from './screens/AddSongScreen';
 import EditSongScreen from './screens/EditSongScreen';
 import AdminDashboard from './screens/AdminDashboard';
-import { onAuthChange } from './services/authService';
+import { onAuthChange, getUserStatus, signOut } from './services/authService';
 import useAppStore from './store/useAppStore';
 
 const BASE = import.meta.env.BASE_URL;
@@ -54,6 +54,17 @@ export default function App() {
 
   useEffect(() => {
     const unsubscribe = onAuthChange(async (user) => {
+      if (user) {
+        const status = await getUserStatus(user.uid);
+        if (status === 'banned' || status === 'removed') {
+          await signOut();
+          setUid(null, null);
+          alert('Your account has been disabled. Please contact an administrator.');
+          setLoading(false);
+          return;
+        }
+      }
+
       setUid(user?.uid ?? null, user?.email ?? null);
       if (user) {
         // Tier 1: restore the user's own backup silently on login

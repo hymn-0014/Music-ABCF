@@ -1,6 +1,6 @@
 import { collection, getDocs, doc, getDoc, deleteDoc, setDoc } from 'firebase/firestore';
 import { db } from '../config/firebase';
-import { Song, Setlist, AdminUser, AdminStats } from '../types';
+import { Song, Setlist, AdminUser, AdminStats, UserStatus } from '../types';
 
 /** The very first admin — seeded automatically if the config doc doesn't exist yet */
 const INITIAL_ADMIN_EMAIL = 'hymn.0014@gmail.com';
@@ -42,6 +42,39 @@ export async function fetchAllCloudSongs(): Promise<Song[]> {
 export async function fetchAllCloudSetlists(): Promise<Setlist[]> {
   const snap = await getDocs(collection(db, 'setlists'));
   return snap.docs.map((d) => d.data() as Setlist);
+}
+
+/** Fetch all registered users from profile docs */
+export async function fetchRegisteredUsers(): Promise<AdminUser[]> {
+  const snap = await getDocs(collection(db, 'users'));
+  return snap.docs
+    .map((d) => {
+      const data = d.data() as {
+        uid?: string;
+        email?: string;
+        lastLoginAt?: string;
+      };
+      if (!data.email) return null;
+      return {
+        uid: data.uid ?? d.id,
+        email: data.email,
+        status: (data as { status?: UserStatus }).status ?? 'active',
+        songsCount: 0,
+        setlistsCount: 0,
+        lastActive: data.lastLoginAt,
+      } as AdminUser;
+    })
+    .filter((u): u is AdminUser => Boolean(u));
+}
+
+/** Update a registered user's status */
+export async function updateUserStatus(uid: string, status: UserStatus): Promise<void> {
+  await setDoc(doc(db, 'users', uid), { status }, { merge: true });
+}
+
+/** Mark a user as removed (keeps audit trail instead of hard-deleting profile) */
+export async function removeUser(uid: string): Promise<void> {
+  await setDoc(doc(db, 'users', uid), { status: 'removed' as UserStatus }, { merge: true });
 }
 
 /** Delete a song from shared cloud */

@@ -5,12 +5,16 @@ import ConfirmDialog from '../components/ConfirmDialog';
 import {
   fetchAllCloudSongs,
   fetchAllCloudSetlists,
+  fetchRegisteredUsers,
   deleteCloudSong,
   deleteCloudSetlist,
+  updateUserStatus,
+  removeUser,
   deriveUsers,
   computeStats,
   exportDataAsJson,
 } from '../services/adminService';
+import { UserStatus } from '../types';
 import { Song, Setlist, AdminUser, AdminStats, AdminView } from '../types';
 
 /* ─── Sidebar ──────────────────────────────────────────── */
@@ -42,6 +46,7 @@ type SortDir = 'asc' | 'desc';
 const AdminDashboard: React.FC = () => {
   const navigate = useNavigate();
   const darkMode = useAppStore((s) => s.darkMode);
+  const currentUserEmail = useAppStore((s) => s.userEmail);
 
   // Data state
   const [songs, setSongs] = useState<Song[]>([]);
@@ -67,21 +72,68 @@ const AdminDashboard: React.FC = () => {
   // Delete confirm
   const [confirmDelete, setConfirmDelete] = useState<{ type: 'song' | 'setlist'; id: string; name: string } | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [updatingUser, setUpdatingUser] = useState<string | null>(null);
 
   // Load data
   const loadData = async () => {
     try {
-      const [cloudSongs, cloudSetlists] = await Promise.all([
+      const [cloudSongs, cloudSetlists, registeredUsers] = await Promise.all([
         fetchAllCloudSongs(),
         fetchAllCloudSetlists(),
+        fetchRegisteredUsers(),
       ]);
       setSongs(cloudSongs);
       setSetlists(cloudSetlists);
-      const derivedUsers = deriveUsers(cloudSongs, cloudSetlists);
-      setUsers(derivedUsers);
-      setStats(computeStats(cloudSongs, cloudSetlists, derivedUsers));
+
+      const activityUsers = deriveUsers(cloudSongs, cloudSetlists);
+      const activityByEmail = new Map(activityUsers.map((u) => [u.email.toLowerCase(), u]));
+      const mergedUsers = registeredUsers
+        .map((u) => {
+          const activity = activityByEmail.get(u.email.toLowerCase());
+          return {
+            ...u,
+            status: u.status || 'active',
+            songsCount: activity?.songsCount ?? 0,
+            setlistsCount: activity?.setlistsCount ?? 0,
+            lastActive: activity?.lastActive ?? u.lastActive,
+          };
+        })
+        .sort((a, b) => {
+          if (a.lastActive && b.lastActive) return b.lastActive.localeCompare(a.lastActive);
+          if (a.lastActive) return -1;
+          if (b.lastActive) return 1;
+          return a.email.localeCompare(b.email);
+        });
+
+      setUsers(mergedUsers);
+      setStats(computeStats(cloudSongs, cloudSetlists, mergedUsers));
     } catch (e) {
       console.error('Admin data load failed:', e);
+    }
+  };
+
+  const handleSetUserStatus = async (uid: string, status: UserStatus) => {
+    setUpdatingUser(uid);
+    try {
+      if (status === 'removed') {
+        await removeUser(uid);
+      } else {
+        await updateUserStatus(uid, status);
+      }
+      setUsers((prev) => prev.map((u) => (u.uid === uid ? { ...u, status } : u)));
+    } catch (e) {
+      console.error('Failed to update user status:', e);
+    } finally {
+      setUpdatingUser(null);
+    }
+  };
+
+  const statusLabel = (status: UserStatus): string => {
+    switch (status) {
+      case 'restricted': return 'Restricted';
+      case 'banned': return 'Banned';
+      case 'removed': return 'Removed';
+      default: return 'Active';
     }
   };
 
@@ -146,7 +198,9 @@ const AdminDashboard: React.FC = () => {
   const filteredUsers = useMemo(() => {
     if (!userFilter.trim()) return users;
     const q = userFilter.toLowerCase();
-    return users.filter((u) => u.email.toLowerCase().includes(q));
+    return users.filter(
+      (u) => u.email.toLowerCase().includes(q) || u.status.toLowerCase().includes(q),
+    );
   }, [users, userFilter]);
 
   // Pagination
@@ -281,7 +335,7 @@ const AdminDashboard: React.FC = () => {
               <span className="admin-stat-icon">👥</span>
               <div className="admin-stat-info">
                 <span className="admin-stat-value">{stats.totalUsers}</span>
-                <span className="admin-stat-label">Active Users</span>
+                  <span className="admin-stat-label">Registered Users</span>
               </div>
             </div>
             <div className="admin-section">
@@ -446,7 +500,7 @@ const AdminDashboard: React.FC = () => {
             <div className="admin-filter-row">
               <input
                 className="admin-filter-input"
-                placeholder="Filter by email…"
+                placeholder="Filter by email or status…"
                 value={userFilter}
                 onChange={(e) => setUserFilter(e.target.value)}
               />
@@ -457,24 +511,59 @@ const AdminDashboard: React.FC = () => {
                 <thead>
                   <tr>
                     <th>Email</th>
+                    <th>Status</th>
                     <th>Songs Uploaded</th>
                     <th>Setlists Uploaded</th>
                     <th>Last Active</th>
+                    <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {userPag.paginated.map((user) => (
                     <tr key={user.email}>
                       <td className="admin-td-email">{user.email}</td>
+                      <td>{statusLabel(user.status)}</td>
                       <td>{user.songsCount}</td>
                       <td>{user.setlistsCount}</td>
                       <td className="admin-td-date">
                         {user.lastActive ? new Date(user.lastActive).toLocaleDateString() : '—'}
                       </td>
+                      <td>
+                        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                          <button
+                            className="btn-outline-small"
+                            disabled={updatingUser === user.uid || currentUserEmail?.toLowerCase() === user.email.toLowerCase()}
+                            onClick={() => handleSetUserStatus(user.uid, 'active')}
+                          >
+                            Activate
+                          </button>
+                          <button
+                            className="btn-outline-small"
+                            disabled={updatingUser === user.uid || currentUserEmail?.toLowerCase() === user.email.toLowerCase()}
+                            onClick={() => handleSetUserStatus(user.uid, 'restricted')}
+                          >
+                            Restrict
+                          </button>
+                          <button
+                            className="btn-outline-small"
+                            disabled={updatingUser === user.uid || currentUserEmail?.toLowerCase() === user.email.toLowerCase()}
+                            onClick={() => handleSetUserStatus(user.uid, 'banned')}
+                          >
+                            Ban
+                          </button>
+                          <button
+                            className="btn-outline-small"
+                            disabled={updatingUser === user.uid || currentUserEmail?.toLowerCase() === user.email.toLowerCase()}
+                            onClick={() => handleSetUserStatus(user.uid, 'removed')}
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      </td>
                     </tr>
                   ))}
                   {userPag.paginated.length === 0 && (
-                    <tr><td colSpan={4} className="admin-empty-row">No users found</td></tr>
+                    <tr><td colSpan={6} className="admin-empty-row">No users found</td></tr>
                   )}
                 </tbody>
               </table>
@@ -510,7 +599,7 @@ const AdminDashboard: React.FC = () => {
               <div className="admin-info-card">
                 <p>Songs in cloud: <strong>{stats.totalSongs}</strong></p>
                 <p>Setlists in cloud: <strong>{stats.totalSetlists}</strong></p>
-                <p>Known users: <strong>{stats.totalUsers}</strong></p>
+                <p>Registered users: <strong>{stats.totalUsers}</strong></p>
               </div>
             </div>
           </div>

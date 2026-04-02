@@ -2,29 +2,66 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isSignedIn()
+        && exists(/databases/$(database)/documents/config/admins)
+        && request.auth.token.email in get(/databases/$(database)/documents/config/admins).data.emails;
+    }
+
+    function hasProfile() {
+      return isSignedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid));
+    }
+
+    function status() {
+      return hasProfile()
+        ? get(/databases/$(database)/documents/users/$(request.auth.uid)).data.status
+        : 'active';
+    }
+
+    function canReadShared() {
+      return isSignedIn() && status() != 'banned' && status() != 'removed';
+    }
+
+    function canWriteShared() {
+      return canReadShared() && status() != 'restricted';
+    }
+
     // Shared song library — any authenticated user can read/write
     match /songs/{songId} {
-      allow read, write: if request.auth != null;
+      allow read: if canReadShared();
+      allow write: if canWriteShared();
     }
 
     // Shared setlists — any authenticated user can read/write
     match /setlists/{setlistId} {
-      allow read, write: if request.auth != null;
+      allow read: if canReadShared();
+      allow write: if canWriteShared();
     }
 
     // Admin config — any authenticated user can read;
     // allow create if doc doesn't exist yet (first-admin seed), otherwise only admins can write
     match /config/{docId} {
-      allow read: if request.auth != null;
-      allow create: if request.auth != null;
-      allow update, delete: if request.auth != null
-        && exists(/databases/$(database)/documents/config/admins)
-        && request.auth.token.email in get(/databases/$(database)/documents/config/admins).data.emails;
+      allow read: if isSignedIn();
+      allow create: if isSignedIn();
+      allow update, delete: if isAdmin();
+    }
+
+    // User profiles at /users/{uid}
+    // owner can create/update their own profile, admins can read all profiles
+    match /users/{userId} {
+      allow create, update: if isSignedIn() && request.auth.uid == userId;
+      allow read: if isSignedIn() && (request.auth.uid == userId || isAdmin());
+      allow update: if isAdmin();
+      allow delete: if false;
     }
 
     // Legacy per-user collections (kept for backward compatibility during migration)
     match /users/{userId}/{document=**} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+      allow read, write: if isSignedIn() && request.auth.uid == userId;
     }
   }
 }

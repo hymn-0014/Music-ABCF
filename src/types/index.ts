@@ -33,6 +33,7 @@ export interface Setlist {
 
 export type NotationMode = 'standard' | 'nashville';
 export type AccidentalPreference = 'sharp' | 'flat';
+export type UserStatus = 'active' | 'restricted' | 'banned' | 'removed';
 
 export interface SyncResult {
   songsUploaded: number;
@@ -50,6 +51,7 @@ export type SyncConfirmFn = (title: string, message: string) => Promise<boolean>
 export interface AdminUser {
   uid: string;
   email: string;
+  status: UserStatus;
   songsCount: number;
   setlistsCount: number;
   lastActive?: string;
