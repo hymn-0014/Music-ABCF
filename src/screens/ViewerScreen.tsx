@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import useAppStore from '../store/useAppStore';
 import SongChordViewer from '../components/SongChordViewer';
@@ -10,6 +10,9 @@ const ViewerScreen = () => {
   const setCurrentSongId = useAppStore((s) => s.setCurrentSongId);
   const currentSetlistId = useAppStore((s) => s.currentSetlistId);
   const setlists = useAppStore((s) => s.setlists);
+  const setSetlists = useAppStore((s) => s.setSetlists);
+  const userEmail = useAppStore((s) => s.userEmail);
+  const [pickerOpen, setPickerOpen] = useState(false);
 
   const song = songs.find((s) => s.id === currentSongId);
   const setlist = setlists.find((sl) => sl.id === currentSetlistId);
@@ -23,6 +26,23 @@ const ViewerScreen = () => {
   const goNext = () => {
     if (currentIndex >= 0 && currentIndex < totalInSetlist - 1)
       setCurrentSongId(setlistSongIds[currentIndex + 1]);
+  };
+
+  const addSongToSetlist = (songId: string, setlistId: string) => {
+    const now = new Date().toISOString();
+    const email = userEmail || 'unknown';
+    setSetlists(setlists.map((sl) =>
+      sl.id === setlistId && !sl.songIds.includes(songId)
+        ? {
+            ...sl,
+            songIds: [...sl.songIds, songId],
+            lastModifiedBy: email,
+            lastModifiedAt: now,
+            modificationHistory: [...(sl.modificationHistory || []), { userEmail: email, action: 'added song', timestamp: now }],
+          }
+        : sl
+    ));
+    setPickerOpen(false);
   };
 
   if (!song) {
@@ -44,6 +64,7 @@ const ViewerScreen = () => {
             <div className="viewer-title">{song.title}</div>
             <div className="viewer-artist">{song.artist} · Key of {song.key}</div>
           </div>
+          <button className="icon-btn" title="Add to setlist" onClick={() => setPickerOpen(true)}>📋+</button>
           <button className="icon-btn" onClick={() => navigate(`/edit-song/${song.id}`)}>✏️</button>
         </div>
         {setlist && (
@@ -68,6 +89,45 @@ const ViewerScreen = () => {
           >
             Next →
           </button>
+        </div>
+      )}
+
+      {/* Setlist picker modal */}
+      {pickerOpen && currentSongId && (
+        <div className="picker-overlay" onClick={() => setPickerOpen(false)}>
+          <div className="picker-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="picker-header">
+              <h3>Add to Setlist</h3>
+              <button className="picker-close" onClick={() => setPickerOpen(false)}>✕</button>
+            </div>
+            {setlists.length === 0 ? (
+              <div className="picker-empty">
+                <p>No setlists yet.</p>
+                <button className="btn-primary small" onClick={() => { setPickerOpen(false); navigate('/setlists'); }}>
+                  Create Setlist
+                </button>
+              </div>
+            ) : (
+              <div className="picker-list">
+                {setlists.map((sl) => {
+                  const alreadyAdded = sl.songIds.includes(currentSongId);
+                  return (
+                    <button
+                      key={sl.id}
+                      className={`picker-item${alreadyAdded ? ' picker-item-disabled' : ''}`}
+                      onClick={() => !alreadyAdded && addSongToSetlist(currentSongId, sl.id)}
+                      disabled={alreadyAdded}
+                    >
+                      <span className="picker-item-name">{sl.name}</span>
+                      <span className="picker-item-count">
+                        {alreadyAdded ? '✓ Added' : `${sl.songIds.length} songs`}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
         </div>
       )}
     </div>

@@ -80,7 +80,6 @@ const SongLibraryScreen = () => {
             >
               ✏️
             </button>
-            <span className="key-badge">{item.key}</span>
           </div>
         ))}
       </div>

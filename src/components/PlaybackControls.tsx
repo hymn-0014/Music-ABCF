@@ -36,7 +36,15 @@ const PlaybackControls: React.FC<PlaybackControlsProps> = ({
       <span className="playback-label">Tempo</span>
       <div className="stepper">
         <button className="round-btn sm" onClick={() => onTempoChange(tempo - 5)}>-</button>
-        <span className="stepper-value">{tempo} BPM</span>
+        <input
+          className="stepper-input"
+          type="number"
+          value={tempo}
+          onChange={(e) => { const v = parseInt(e.target.value, 10); if (!isNaN(v) && v > 0) onTempoChange(v); }}
+          min={20}
+          max={300}
+        />
+        <span className="stepper-unit">BPM</span>
         <button className="round-btn sm" onClick={() => onTempoChange(tempo + 5)}>+</button>
       </div>
     </div>

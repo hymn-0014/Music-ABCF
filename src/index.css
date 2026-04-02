@@ -680,6 +680,31 @@ a { color: #4FC3F7; text-decoration: none; }
   text-align: center;
   font-size: 13px;
 }
+.toolbar-speed-input {
+  width: 48px;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 600;
+  color: #17324A;
+  background: transparent;
+  border: 1px solid #D7E1EC;
+  border-radius: 6px;
+  padding: 4px 2px;
+  outline: none;
+  -moz-appearance: textfield;
+}
+.toolbar-speed-input::-webkit-outer-spin-button,
+.toolbar-speed-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.toolbar-speed-input:focus {
+  border-color: #4FC3F7;
+}
+.toolbar-speed-unit {
+  font-size: 11px;
+  color: #41566D;
+}
 .toolbar-btn:hover { background: #D9E5F1; }
 .toolbar-btn.active {
   background: #0F5E86;
@@ -861,6 +886,31 @@ a { color: #4FC3F7; text-decoration: none; }
   min-width: 88px;
   text-align: center;
   font-size: 14px;
+}
+.stepper-input {
+  width: 56px;
+  text-align: center;
+  font-size: 14px;
+  font-weight: 600;
+  color: #FFFFFF;
+  background: transparent;
+  border: 1px solid #444;
+  border-radius: 6px;
+  padding: 4px 2px;
+  outline: none;
+  -moz-appearance: textfield;
+}
+.stepper-input::-webkit-outer-spin-button,
+.stepper-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.stepper-input:focus {
+  border-color: #4FC3F7;
+}
+.stepper-unit {
+  font-size: 12px;
+  color: #888;
 }
 .toggle-pill {
   background: #2A2A2A;
@@ -1417,10 +1467,20 @@ html:not(.dark) .empty-text {
 
 html:not(.dark) .lyric-line,
 html:not(.dark) .toolbar-speed-value,
+html:not(.dark) .toolbar-speed-input,
 html:not(.dark) .transpose-level,
 html:not(.dark) .notation-label,
-html:not(.dark) .stepper-value {
+html:not(.dark) .stepper-value,
+html:not(.dark) .stepper-input {
   color: #0F172A;
+}
+html:not(.dark) .toolbar-speed-input,
+html:not(.dark) .stepper-input {
+  border-color: #D1D5DB;
+}
+html:not(.dark) .toolbar-speed-unit,
+html:not(.dark) .stepper-unit {
+  color: #6B7280;
 }
 
 /* --- 6. Secondary text — body copy ------------------------- */
@@ -2040,8 +2100,15 @@ html.dark .toolbar-btn.active {
   color: #121212;
 }
 html.dark .toolbar-speed-value,
+html.dark .toolbar-speed-input,
 html.dark .transpose-level {
   color: #E0E0E0;
+}
+html.dark .toolbar-speed-input {
+  border-color: #444;
+}
+html.dark .toolbar-speed-unit {
+  color: #888;
 }
 html.dark .lyrics-container {
   background: #121212;

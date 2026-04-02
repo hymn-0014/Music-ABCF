@@ -70,21 +70,21 @@ const SongChordViewer: React.FC<SongChordViewerProps> = ({ song }) => {
           onClick={() => setAutoScrollEnabled(!autoScrollEnabled)}
           title={autoScrollEnabled ? 'Stop scroll' : 'Start scroll'}
         >
-          {autoScrollEnabled ? '⏸' : '▶'} Scroll
+          {autoScrollEnabled ? '⏸' : '▶'}
         </button>
         <button
           className={`action-btn ${showPlayback ? 'active' : ''}`}
           onClick={() => setShowPlayback(!showPlayback)}
           title="Playback controls"
         >
-          🎵 Playback
+          🎵
         </button>
         <button
           className={`action-btn ${editMode ? 'active' : ''}`}
           onClick={() => setEditMode(!editMode)}
           title="Toggle line edit mode"
         >
-          ♫ Edit
+          ♫
         </button>
         <button
           className={`action-btn ribbon-expand-btn ${!ribbonCollapsed ? 'active' : ''}`}
@@ -92,7 +92,7 @@ const SongChordViewer: React.FC<SongChordViewerProps> = ({ song }) => {
           title={ribbonCollapsed ? 'Show controls' : 'Hide controls'}
           aria-expanded={!ribbonCollapsed}
         >
-          {ribbonCollapsed ? '▼ More' : '▲ Less'}
+          {ribbonCollapsed ? '▼' : '▲'}
         </button>
       </div>
 
@@ -110,7 +110,15 @@ const SongChordViewer: React.FC<SongChordViewerProps> = ({ song }) => {
           <div className="toolbar-right">
             <div className="toolbar-speed">
               <button className="round-btn sm" onClick={() => setAutoScrollSpeed(autoScrollSpeed - 5)}>-</button>
-              <span className="toolbar-speed-value">{autoScrollSpeed}px/s</span>
+              <input
+                className="toolbar-speed-input"
+                type="number"
+                value={autoScrollSpeed}
+                onChange={(e) => { const v = parseInt(e.target.value, 10); if (!isNaN(v)) setAutoScrollSpeed(v); }}
+                min={10}
+                max={120}
+              />
+              <span className="toolbar-speed-unit">px/s</span>
               <button className="round-btn sm" onClick={() => setAutoScrollSpeed(autoScrollSpeed + 5)}>+</button>
             </div>
           </div>
