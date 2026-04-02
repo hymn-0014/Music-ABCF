@@ -7,6 +7,7 @@ import SettingsScreen from './screens/SettingsScreen';
 import LoginScreen from './screens/LoginScreen';
 import AddSongScreen from './screens/AddSongScreen';
 import EditSongScreen from './screens/EditSongScreen';
+import AdminDashboard from './screens/AdminDashboard';
 import { onAuthChange } from './services/authService';
 import useAppStore from './store/useAppStore';
 
@@ -86,6 +87,7 @@ export default function App() {
         <Route path="/" element={<TabLayout />} />
         <Route path="/viewer" element={<ViewerScreen />} />
         <Route path="/add-song" element={<AddSongScreen />} />
+        <Route path="/admin" element={<AdminDashboard />} />
         <Route path="/edit-song/:songId" element={<EditSongScreen />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

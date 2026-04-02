@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import useAppStore from '../store/useAppStore';
 import { signOut } from '../services/authService';
+import { checkIsAdmin } from '../services/adminService';
 import { Setlist, SyncConfirmFn, SyncResult } from '../types';
 
 const webConfirm: SyncConfirmFn = async (title: string, message: string): Promise<boolean> => {
@@ -26,6 +28,16 @@ const formatSyncResult = (result: SyncResult, direction: 'push' | 'pull'): strin
 };
 
 const SettingsScreen = () => {
+  const navigate = useNavigate();
+  const userEmail = useAppStore((s) => s.userEmail);
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    if (userEmail) {
+      checkIsAdmin(userEmail).then(setIsAdmin);
+    }
+  }, [userEmail]);
+
   const darkMode = useAppStore((s) => s.darkMode);
   const toggleDarkMode = useAppStore((s) => s.toggleDarkMode);
   const accidental = useAppStore((s) => s.accidental);
@@ -252,6 +264,22 @@ const SettingsScreen = () => {
                 <p className="picker-empty">No local setlists to upload.</p>
               )}
             </div>
+          </div>
+        </div>
+      )}
+
+      {isAdmin && (
+        <div className="settings-section">
+          <h3 className="settings-section-title">Administration</h3>
+          <div className="settings-card">
+            <button className="settings-sync-row" onClick={() => navigate('/admin')}>
+              <span className="settings-icon">🛡️</span>
+              <div className="settings-sync-info">
+                <span>Admin Dashboard</span>
+                <span className="settings-hint">Manage songs, setlists, and users</span>
+              </div>
+              <span className="arrow">→</span>
+            </button>
           </div>
         </div>
       )}

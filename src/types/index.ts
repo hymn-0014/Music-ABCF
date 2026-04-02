@@ -45,3 +45,20 @@ export interface SyncResult {
 }
 
 export type SyncConfirmFn = (title: string, message: string) => Promise<boolean>;
+
+// Admin types
+export interface AdminUser {
+  uid: string;
+  email: string;
+  songsCount: number;
+  setlistsCount: number;
+  lastActive?: string;
+}
+
+export interface AdminStats {
+  totalSongs: number;
+  totalSetlists: number;
+  totalUsers: number;
+}
+
+export type AdminView = 'dashboard' | 'songs' | 'setlists' | 'users' | 'settings';
