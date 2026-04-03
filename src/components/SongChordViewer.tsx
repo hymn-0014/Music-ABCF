@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { Song, ChordLyricLine } from '../types';
 import LyricsViewer from './LyricsViewer';
 import TransposeControl from './TransposeControl';
@@ -29,7 +29,50 @@ const SongChordViewer: React.FC<SongChordViewerProps> = ({ song }) => {
   const [showPlayback, setShowPlayback] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [ribbonCollapsed, setRibbonCollapsed] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(
+    !!(document.fullscreenElement || (document as any).webkitFullscreenElement)
+  );
   const audioContextRef = useRef<AudioContext | null>(null);
+
+  const supportsNativeFullscreen = !!document.documentElement.requestFullscreen
+    || !!(document.documentElement as any).webkitRequestFullscreen;
+
+  const toggleFullscreen = useCallback(() => {
+    const viewerLayout = document.querySelector('.viewer-layout');
+    if (supportsNativeFullscreen) {
+      if (!document.fullscreenElement && !(document as any).webkitFullscreenElement) {
+        if (viewerLayout && (viewerLayout as any).requestFullscreen) (viewerLayout as any).requestFullscreen();
+        else if (viewerLayout && (viewerLayout as any).webkitRequestFullscreen) (viewerLayout as any).webkitRequestFullscreen();
+      } else {
+        if (document.exitFullscreen) document.exitFullscreen();
+        else if ((document as any).webkitExitFullscreen) (document as any).webkitExitFullscreen();
+      }
+    } else {
+      // Dispatch custom event so ViewerScreen can manage the CSS fallback state
+      window.dispatchEvent(new CustomEvent('toggle-fullscreen-fallback'));
+    }
+  }, [supportsNativeFullscreen]);
+
+  useEffect(() => {
+    const handler = () => setIsFullscreen(
+      !!(document.fullscreenElement || (document as any).webkitFullscreenElement)
+    );
+    document.addEventListener('fullscreenchange', handler);
+    document.addEventListener('webkitfullscreenchange', handler);
+
+    // Listen for CSS fallback fullscreen changes from ViewerScreen
+    const fallbackHandler = () => {
+      const viewerLayout = document.querySelector('.viewer-layout');
+      setIsFullscreen(viewerLayout?.classList.contains('fullscreen-active') ?? false);
+    };
+    window.addEventListener('fullscreen-fallback-changed', fallbackHandler);
+
+    return () => {
+      document.removeEventListener('fullscreenchange', handler);
+      document.removeEventListener('webkitfullscreenchange', handler);
+      window.removeEventListener('fullscreen-fallback-changed', fallbackHandler);
+    };
+  }, []);
 
   useEffect(() => {
     if (!metronomeEnabled) return undefined;
@@ -93,6 +136,13 @@ const SongChordViewer: React.FC<SongChordViewerProps> = ({ song }) => {
           aria-expanded={!ribbonCollapsed}
         >
           {ribbonCollapsed ? '▼' : '▲'}
+        </button>
+        <button
+          className={`action-btn fullscreen-action-btn${isFullscreen ? ' active' : ''}`}
+          onClick={toggleFullscreen}
+          title={isFullscreen ? 'Exit full screen' : 'Full screen'}
+        >
+          {isFullscreen ? '⮌' : '⛶'}
         </button>
       </div>
 

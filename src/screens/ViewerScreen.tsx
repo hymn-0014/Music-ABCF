@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import useAppStore from '../store/useAppStore';
 import SongChordViewer from '../components/SongChordViewer';
@@ -13,6 +13,73 @@ const ViewerScreen = () => {
   const setSetlists = useAppStore((s) => s.setSetlists);
   const userEmail = useAppStore((s) => s.userEmail);
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const viewerRef = useRef<HTMLDivElement>(null);
+
+  const supportsNativeFullscreen = !!document.documentElement.requestFullscreen
+    || !!(document.documentElement as any).webkitRequestFullscreen;
+
+  const toggleFullscreen = useCallback(() => {
+    if (supportsNativeFullscreen) {
+      if (!document.fullscreenElement && !(document as any).webkitFullscreenElement) {
+        const el = viewerRef.current;
+        if (el?.requestFullscreen) el.requestFullscreen();
+        else if ((el as any)?.webkitRequestFullscreen) (el as any).webkitRequestFullscreen();
+      } else {
+        if (document.exitFullscreen) document.exitFullscreen();
+        else if ((document as any).webkitExitFullscreen) (document as any).webkitExitFullscreen();
+      }
+    } else {
+      // iOS / browsers without Fullscreen API: CSS-based fallback
+      setIsFullscreen((prev) => !prev);
+    }
+  }, [supportsNativeFullscreen]);
+
+  useEffect(() => {
+    if (!supportsNativeFullscreen) return;
+    const handler = () => setIsFullscreen(
+      !!(document.fullscreenElement || (document as any).webkitFullscreenElement)
+    );
+    document.addEventListener('fullscreenchange', handler);
+    document.addEventListener('webkitfullscreenchange', handler);
+    return () => {
+      document.removeEventListener('fullscreenchange', handler);
+      document.removeEventListener('webkitfullscreenchange', handler);
+    };
+  }, [supportsNativeFullscreen]);
+
+  // Prevent body scroll when in CSS-based fullscreen fallback
+  useEffect(() => {
+    if (!supportsNativeFullscreen && isFullscreen) {
+      document.body.style.overflow = 'hidden';
+      return () => { document.body.style.overflow = ''; };
+    }
+  }, [isFullscreen, supportsNativeFullscreen]);
+
+  // Notify SongChordViewer when CSS fallback state changes
+  useEffect(() => {
+    if (!supportsNativeFullscreen) {
+      window.dispatchEvent(new CustomEvent('fullscreen-fallback-changed'));
+    }
+  }, [isFullscreen, supportsNativeFullscreen]);
+
+  // Listen for toggle requests from SongChordViewer's action-bar button
+  useEffect(() => {
+    if (supportsNativeFullscreen) return;
+    const handler = () => setIsFullscreen((prev) => !prev);
+    window.addEventListener('toggle-fullscreen-fallback', handler);
+    return () => window.removeEventListener('toggle-fullscreen-fallback', handler);
+  }, [supportsNativeFullscreen]);
+
+  // Allow Escape key to exit CSS-based fullscreen fallback
+  useEffect(() => {
+    if (supportsNativeFullscreen || !isFullscreen) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setIsFullscreen(false);
+    };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, [isFullscreen, supportsNativeFullscreen]);
 
   const song = songs.find((s) => s.id === currentSongId);
   const setlist = setlists.find((sl) => sl.id === currentSetlistId);
@@ -56,7 +123,10 @@ const ViewerScreen = () => {
   }
 
   return (
-    <div className="viewer-layout">
+    <div
+      className={`viewer-layout${isFullscreen ? ' fullscreen-active' : ''}${isFullscreen && !supportsNativeFullscreen ? ' fullscreen-fallback' : ''}`}
+      ref={viewerRef}
+    >
       <div className="viewer-header">
         <div className="viewer-header-top">
           <button className="back-btn" onClick={() => navigate('/')}>←</button>
@@ -66,6 +136,13 @@ const ViewerScreen = () => {
           </div>
           <button className="icon-btn" title="Add to setlist" onClick={() => setPickerOpen(true)}>📋+</button>
           <button className="icon-btn" onClick={() => navigate(`/edit-song/${song.id}`)}>✏️</button>
+          <button
+            className={`icon-btn fullscreen-btn${isFullscreen ? ' active' : ''}`}
+            title={isFullscreen ? 'Exit full screen' : 'Full screen'}
+            onClick={toggleFullscreen}
+          >
+            {isFullscreen ? '⛶' : '⛶'}
+          </button>
         </div>
         {setlist && (
           <div className="viewer-setlist-info">{setlist.name} ({currentIndex + 1}/{totalInSetlist})</div>

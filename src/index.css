@@ -643,6 +643,120 @@ a { color: #4FC3F7; text-decoration: none; }
   color: #0F5E86;
 }
 
+/* ===== Fullscreen mode ===== */
+.fullscreen-btn {
+  font-size: 18px;
+  padding: 4px 6px;
+  min-width: 44px;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s;
+  -webkit-tap-highlight-color: transparent;
+}
+.fullscreen-btn.active {
+  color: #4FC3F7;
+}
+
+.fullscreen-action-btn {
+  font-size: 14px;
+  min-width: 44px;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Native fullscreen (Chrome, Firefox, Android browsers) */
+.viewer-layout:fullscreen,
+.viewer-layout:-webkit-full-screen {
+  background: #121212;
+  width: 100%;
+  height: 100%;
+}
+
+/* CSS-based fullscreen fallback (iOS Safari, older browsers) */
+.viewer-layout.fullscreen-fallback {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh; /* dynamic viewport for mobile address bar */
+  z-index: 99999;
+  background: #121212;
+  overflow: hidden;
+  /* Safe area insets for iPhone notch / Dynamic Island */
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+}
+
+.fullscreen-active .viewer-header {
+  background: #1A1A2E;
+  border-bottom-color: #333;
+}
+.fullscreen-active .viewer-title {
+  color: #FFFFFF;
+}
+.fullscreen-active .viewer-artist {
+  color: #AAB8C8;
+}
+.fullscreen-active .viewer-setlist-info {
+  color: #4FC3F7;
+}
+.fullscreen-active .back-btn {
+  color: #4FC3F7;
+}
+.fullscreen-active .action-bar {
+  background: #1A1A2E;
+  border-bottom-color: #333;
+}
+.fullscreen-active .action-btn {
+  background: #2A2A3E;
+  color: #DDD;
+}
+.fullscreen-active .action-btn:hover {
+  background: #3A3A50;
+}
+.fullscreen-active .action-btn.active {
+  background: #0F5E86;
+  color: #FFF;
+}
+.fullscreen-active .controls-ribbon {
+  background: #1A1A2E;
+  border-bottom-color: #333;
+}
+.fullscreen-active .viewer-nav-row {
+  background: #1A1A2E;
+  padding: 8px;
+}
+.fullscreen-active .nav-counter {
+  color: #AAB8C8;
+}
+.fullscreen-active .lyrics-container {
+  background: #121212;
+  color: #EEEEEE;
+}
+.fullscreen-active .toolbar {
+  background: #1A1A2E;
+  border-bottom-color: #333;
+}
+.fullscreen-active .icon-btn {
+  color: #DDD;
+}
+.fullscreen-active .playback-card {
+  background: #2A2A3E;
+  border-color: #444;
+}
+.fullscreen-active .playback-title,
+.fullscreen-active .playback-label {
+  color: #DDD;
+}
+
 .toolbar {
   display: flex;
   align-items: center;
@@ -1847,6 +1961,38 @@ html:not(.dark) .picker-msg.warning { color: #A16207; }
    ============================================================ */
 @media (max-width: 600px) {
 
+  /* --- Fullscreen: mobile-optimized touch targets --- */
+  .fullscreen-btn {
+    min-width: 44px;
+    min-height: 44px;
+    font-size: 20px;
+    padding: 8px;
+  }
+  .fullscreen-action-btn {
+    min-width: 44px;
+    min-height: 44px;
+    font-size: 13px;
+    padding: 6px 10px;
+  }
+  .fullscreen-active .viewer-header {
+    padding: 8px 12px 6px;
+  }
+  .fullscreen-active .viewer-title {
+    font-size: 16px;
+  }
+  .fullscreen-active .viewer-artist {
+    font-size: 12px;
+  }
+  .fullscreen-active .viewer-nav-row {
+    gap: 10px;
+    padding: 6px;
+  }
+  .fullscreen-active .viewer-nav-row .btn-primary {
+    padding: 10px 18px;
+    min-height: 44px;
+    font-size: 14px;
+  }
+
   /* --- Action bar: wrap on small screens --- */
   .action-bar {
     flex-wrap: wrap;
@@ -2152,6 +2298,21 @@ html:not(.dark) .picker-msg.warning { color: #A16207; }
   }
   .chord-line {
     font-size: 12px;
+  }
+  /* Fullscreen on very small screens */
+  .fullscreen-active .viewer-header {
+    padding: 6px 8px 4px;
+  }
+  .fullscreen-active .viewer-title {
+    font-size: 14px;
+  }
+  .fullscreen-active .action-bar {
+    gap: 3px;
+    padding: 4px 6px;
+  }
+  .fullscreen-active .lyrics-container {
+    padding: 6px;
+    font-size: 14px;
   }
 }
 
@@ -2739,6 +2900,87 @@ html.dark .admin-settings-card {
 html.dark .admin-info-card {
   background: #252525;
   color: #bbb;
+}
+
+/* ─── Tablet fullscreen (iPads, tablets 601–1024px) ────── */
+@media (min-width: 601px) and (max-width: 1024px) {
+  .fullscreen-btn {
+    font-size: 20px;
+    min-width: 48px;
+    min-height: 48px;
+  }
+  .fullscreen-action-btn {
+    font-size: 15px;
+    min-width: 48px;
+    min-height: 48px;
+    padding: 8px 14px;
+  }
+  .fullscreen-active .viewer-header {
+    padding: 14px 20px 10px;
+  }
+  .fullscreen-active .viewer-title {
+    font-size: 22px;
+  }
+  .fullscreen-active .viewer-artist {
+    font-size: 15px;
+  }
+  .fullscreen-active .action-bar {
+    gap: 8px;
+    padding: 8px 14px;
+  }
+  .fullscreen-active .action-btn {
+    padding: 8px 16px;
+    font-size: 14px;
+  }
+  .fullscreen-active .lyrics-container {
+    padding: 16px 24px;
+    font-size: 18px;
+  }
+  .fullscreen-active .chord-line {
+    font-size: 16px;
+  }
+  .fullscreen-active .viewer-nav-row .btn-primary {
+    padding: 12px 28px;
+    min-height: 48px;
+    font-size: 16px;
+  }
+}
+
+/* ─── Landscape orientation fullscreen optimizations ───── */
+@media (orientation: landscape) and (max-height: 500px) {
+  .fullscreen-active .viewer-header {
+    padding: 4px 12px 2px;
+  }
+  .fullscreen-active .viewer-title {
+    font-size: 14px;
+  }
+  .fullscreen-active .viewer-artist {
+    font-size: 11px;
+  }
+  .fullscreen-active .viewer-setlist-info {
+    font-size: 11px;
+    margin-top: 2px;
+  }
+  .fullscreen-active .action-bar {
+    padding: 3px 8px;
+    gap: 4px;
+  }
+  .fullscreen-active .action-btn {
+    padding: 4px 8px;
+    font-size: 11px;
+  }
+  .fullscreen-active .controls-ribbon {
+    max-height: 120px;
+    overflow-y: auto;
+  }
+  .fullscreen-active .viewer-nav-row {
+    padding: 4px;
+    gap: 8px;
+  }
+  .fullscreen-active .lyrics-container {
+    font-size: 15px;
+    padding: 6px 10px;
+  }
 }
 
 /* ─── Mobile responsive ────────────────────────────────── */
