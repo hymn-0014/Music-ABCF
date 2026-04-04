@@ -11,6 +11,8 @@ interface LyricsViewerProps {
   autoScrollEnabled: boolean;
   autoScrollSpeed: number;
   editMode?: boolean;
+  columns?: 1 | 2;
+  viewMode?: 'all' | 'chords' | 'lyrics';
   onLinesChange?: (newLines: ChordLyricLine[]) => void;
 }
 
@@ -39,8 +41,15 @@ function renderColoredChordLine(chordLine: string): React.ReactNode[] {
   return elements;
 }
 
+interface RenderLine {
+  index: number;
+  displayChords: string;
+  isSection: boolean;
+  lyrics: string;
+}
+
 const LyricsViewer: React.FC<LyricsViewerProps> = ({
-  lines, transpose, songKey, notation, accidental, autoScrollEnabled, autoScrollSpeed, editMode, onLinesChange,
+  lines, transpose, songKey, notation, accidental, autoScrollEnabled, autoScrollSpeed, editMode, columns = 1, viewMode = 'all', onLinesChange,
 }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const isAutoScrollingRef = useRef(false);
@@ -102,40 +111,61 @@ const LyricsViewer: React.FC<LyricsViewerProps> = ({
     onLinesChange(newLines);
   };
 
-  return (
-    <div className="lyrics-container" ref={scrollRef}>
-      {lines.map((line, i) => {
-        let displayChords = line.chords;
-        if (displayChords) {
-          displayChords = transposeLine(displayChords, transpose, accidental);
-          if (notation === 'nashville') displayChords = nashvilleLineFromChords(displayChords, songKey);
-        }
-        const isSection = line.lyrics && SECTION_PATTERN.test(line.lyrics.trim());
-        return (
-          <div key={i} className={`line-block${editMode ? ' line-block-edit' : ''}`}>
-            {displayChords ? (
-              <div className="chord-line-row">
-                <div className="chord-line">{renderColoredChordLine(displayChords)}</div>
-                {editMode && (
-                  <button className="line-toggle-btn chord-to-lyric" title="Mark as lyrics" onClick={() => markAsLyrics(i)}>T</button>
-                )}
-              </div>
-            ) : null}
-            {line.lyrics ? (
-              isSection ? (
-                <div className="section-label">{line.lyrics}</div>
-              ) : (
-                <div className="lyric-line-row">
-                  <div className="lyric-line">{line.lyrics}</div>
-                  {editMode && !line.chords && (
-                    <button className="line-toggle-btn lyric-to-chord" title="Mark as chords" onClick={() => markAsChords(i)}>♫</button>
-                  )}
-                </div>
-              )
-            ) : null}
+  const renderedLines: RenderLine[] = lines.map((line, index) => {
+    let displayChords = line.chords;
+    if (displayChords) {
+      displayChords = transposeLine(displayChords, transpose, accidental);
+      if (notation === 'nashville') displayChords = nashvilleLineFromChords(displayChords, songKey);
+    }
+
+    return {
+      index,
+      displayChords,
+      isSection: !!(line.lyrics && SECTION_PATTERN.test(line.lyrics.trim())),
+      lyrics: line.lyrics,
+    };
+  });
+
+  const midpoint = columns === 2 ? Math.ceil(renderedLines.length / 2) : renderedLines.length;
+  const columnGroups = columns === 2
+    ? [renderedLines.slice(0, midpoint), renderedLines.slice(midpoint)]
+    : [renderedLines];
+
+  const showChords = viewMode !== 'lyrics';
+  const showLyrics = viewMode !== 'chords';
+
+  const renderLineBlock = (line: RenderLine) => (
+    <div key={line.index} className={`line-block${editMode ? ' line-block-edit' : ''}`}>
+      {showChords && line.displayChords ? (
+        <div className="chord-line-row">
+          <div className="chord-line">{renderColoredChordLine(line.displayChords)}</div>
+          {editMode && (
+            <button className="line-toggle-btn chord-to-lyric" title="Mark as lyrics" onClick={() => markAsLyrics(line.index)}>T</button>
+          )}
+        </div>
+      ) : null}
+      {showLyrics && line.lyrics ? (
+        line.isSection ? (
+          <div className="section-label">{line.lyrics}</div>
+        ) : (
+          <div className="lyric-line-row">
+            <div className="lyric-line">{line.lyrics}</div>
+            {editMode && !lines[line.index].chords && (
+              <button className="line-toggle-btn lyric-to-chord" title="Mark as chords" onClick={() => markAsChords(line.index)}>♫</button>
+            )}
           </div>
-        );
-      })}
+        )
+      ) : null}
+    </div>
+  );
+
+  return (
+    <div className={`lyrics-container${columns === 2 ? ' lyrics-two-columns' : ''}`} ref={scrollRef}>
+      {columnGroups.map((group, columnIndex) => (
+        <div key={columnIndex} className="lyrics-column">
+          {group.map(renderLineBlock)}
+        </div>
+      ))}
     </div>
   );
 };

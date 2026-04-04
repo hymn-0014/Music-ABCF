@@ -29,6 +29,8 @@ const SongChordViewer: React.FC<SongChordViewerProps> = ({ song }) => {
   const [showPlayback, setShowPlayback] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [ribbonCollapsed, setRibbonCollapsed] = useState(false);
+  const [columns, setColumns] = useState<1 | 2>(1);
+  const [viewMode, setViewMode] = useState<'all' | 'chords' | 'lyrics'>('all');
   const [isFullscreen, setIsFullscreen] = useState(
     !!(document.fullscreenElement || (document as any).webkitFullscreenElement)
   );
@@ -130,6 +132,27 @@ const SongChordViewer: React.FC<SongChordViewerProps> = ({ song }) => {
           ♫
         </button>
         <button
+          className={`action-btn ${viewMode === 'chords' ? 'active' : ''}`}
+          onClick={() => setViewMode(viewMode === 'chords' ? 'all' : 'chords')}
+          title={viewMode === 'chords' ? 'Show all' : 'Chords only'}
+        >
+          C♯
+        </button>
+        <button
+          className={`action-btn ${viewMode === 'lyrics' ? 'active' : ''}`}
+          onClick={() => setViewMode(viewMode === 'lyrics' ? 'all' : 'lyrics')}
+          title={viewMode === 'lyrics' ? 'Show all' : 'Lyrics only'}
+        >
+          Aa
+        </button>
+        <button
+          className={`action-btn ${columns === 2 ? 'active' : ''}`}
+          onClick={() => setColumns(columns === 1 ? 2 : 1)}
+          title={columns === 2 ? 'Single column' : 'Two columns'}
+        >
+          ▥
+        </button>
+        <button
           className={`action-btn ribbon-expand-btn ${!ribbonCollapsed ? 'active' : ''}`}
           onClick={() => setRibbonCollapsed(!ribbonCollapsed)}
           title={ribbonCollapsed ? 'Show controls' : 'Hide controls'}
@@ -200,6 +223,8 @@ const SongChordViewer: React.FC<SongChordViewerProps> = ({ song }) => {
         autoScrollEnabled={autoScrollEnabled}
         autoScrollSpeed={autoScrollSpeed}
         editMode={editMode}
+        columns={columns}
+        viewMode={viewMode}
         onLinesChange={(newLines: ChordLyricLine[]) => updateSong(song.id, { lines: newLines })}
       />
     </div>
