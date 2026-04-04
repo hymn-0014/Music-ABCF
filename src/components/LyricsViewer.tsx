@@ -133,6 +133,7 @@ const LyricsViewer: React.FC<LyricsViewerProps> = ({
 
   const showChords = viewMode !== 'lyrics';
   const showLyrics = viewMode !== 'chords';
+  const showSectionLabels = viewMode !== 'lyrics';
 
   const renderLineBlock = (line: RenderLine) => (
     <div key={line.index} className={`line-block${editMode ? ' line-block-edit' : ''}`}>
@@ -144,17 +145,19 @@ const LyricsViewer: React.FC<LyricsViewerProps> = ({
           )}
         </div>
       ) : null}
-      {showLyrics && line.lyrics ? (
+      {line.lyrics ? (
         line.isSection ? (
+          showSectionLabels ? (
           <div className="section-label">{line.lyrics}</div>
-        ) : (
+          ) : null
+        ) : showLyrics ? (
           <div className="lyric-line-row">
             <div className="lyric-line">{line.lyrics}</div>
             {editMode && !lines[line.index].chords && (
               <button className="line-toggle-btn lyric-to-chord" title="Mark as chords" onClick={() => markAsChords(line.index)}>♫</button>
             )}
           </div>
-        )
+        ) : null
       ) : null}
     </div>
   );
