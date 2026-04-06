@@ -25,6 +25,9 @@ import {
 
 const THEME_PREF_KEY = 'musicabcf-theme-dark';
 const SONG_TRANSPOSE_PREF_KEY = 'musicabcf-song-transpose-by-id';
+const SECTION_JUMP_ENABLED_PREF_KEY = 'musicabcf-section-jump-enabled';
+const SECTION_JUMP_SIDE_PREF_KEY = 'musicabcf-section-jump-side';
+const SECTION_JUMP_AUTO_HIDE_PREF_KEY = 'musicabcf-section-jump-auto-hide';
 
 const getInitialDarkMode = (): boolean => {
   if (typeof window === 'undefined') return true;
@@ -41,6 +44,65 @@ const persistDarkMode = (enabled: boolean): void => {
   if (typeof window === 'undefined') return;
   try {
     window.localStorage.setItem(THEME_PREF_KEY, String(enabled));
+  } catch {
+    // Ignore storage write failures and keep in-memory preference.
+  }
+};
+
+const getInitialSectionJumpEnabled = (): boolean => {
+  if (typeof window === 'undefined') return true;
+  try {
+    const stored = window.localStorage.getItem(SECTION_JUMP_ENABLED_PREF_KEY);
+    if (stored === null) return true;
+    return stored === 'true';
+  } catch {
+    return true;
+  }
+};
+
+const persistSectionJumpEnabled = (enabled: boolean): void => {
+  if (typeof window === 'undefined') return;
+  try {
+    window.localStorage.setItem(SECTION_JUMP_ENABLED_PREF_KEY, String(enabled));
+  } catch {
+    // Ignore storage write failures and keep in-memory preference.
+  }
+};
+
+const getInitialSectionJumpSide = (): 'left' | 'right' => {
+  if (typeof window === 'undefined') return 'right';
+  try {
+    const stored = window.localStorage.getItem(SECTION_JUMP_SIDE_PREF_KEY);
+    return stored === 'left' ? 'left' : 'right';
+  } catch {
+    return 'right';
+  }
+};
+
+const persistSectionJumpSide = (side: 'left' | 'right'): void => {
+  if (typeof window === 'undefined') return;
+  try {
+    window.localStorage.setItem(SECTION_JUMP_SIDE_PREF_KEY, side);
+  } catch {
+    // Ignore storage write failures and keep in-memory preference.
+  }
+};
+
+const getInitialSectionJumpAutoHide = (): boolean => {
+  if (typeof window === 'undefined') return false;
+  try {
+    const stored = window.localStorage.getItem(SECTION_JUMP_AUTO_HIDE_PREF_KEY);
+    if (stored === null) return false;
+    return stored === 'true';
+  } catch {
+    return false;
+  }
+};
+
+const persistSectionJumpAutoHide = (enabled: boolean): void => {
+  if (typeof window === 'undefined') return;
+  try {
+    window.localStorage.setItem(SECTION_JUMP_AUTO_HIDE_PREF_KEY, String(enabled));
   } catch {
     // Ignore storage write failures and keep in-memory preference.
   }
@@ -95,6 +157,9 @@ interface AppState {
   autoScrollEnabled: boolean;
   autoScrollSpeed: number;
   darkMode: boolean;
+  sectionJumpEnabled: boolean;
+  sectionJumpSide: 'left' | 'right';
+  sectionJumpAutoHide: boolean;
   // actions
   setSongs: (songs: Song[]) => void;
   setSetlists: (setlists: Setlist[]) => void;
@@ -111,6 +176,9 @@ interface AppState {
   setAutoScrollEnabled: (enabled: boolean) => void;
   setAutoScrollSpeed: (speed: number) => void;
   toggleDarkMode: () => void;
+  setSectionJumpEnabled: (enabled: boolean) => void;
+  setSectionJumpSide: (side: 'left' | 'right') => void;
+  setSectionJumpAutoHide: (enabled: boolean) => void;
   // cloud sync
   restorePersonalData: () => Promise<void>;
   pullFromCloud: () => Promise<void>;
@@ -189,6 +257,9 @@ const useAppStore = create<AppState>((set, get) => ({
   autoScrollEnabled: false,
   autoScrollSpeed: 30,
   darkMode: getInitialDarkMode(),
+  sectionJumpEnabled: getInitialSectionJumpEnabled(),
+  sectionJumpSide: getInitialSectionJumpSide(),
+  sectionJumpAutoHide: getInitialSectionJumpAutoHide(),
   setSongs: (songs) => {
     const normalizedSongs = prepareSongs(songs);
     const validSongIds = new Set(normalizedSongs.map((s) => s.id));
@@ -307,6 +378,18 @@ const useAppStore = create<AppState>((set, get) => ({
     persistDarkMode(next);
     return { darkMode: next };
   }),
+  setSectionJumpEnabled: (enabled) => {
+    persistSectionJumpEnabled(enabled);
+    set({ sectionJumpEnabled: enabled });
+  },
+  setSectionJumpSide: (side) => {
+    persistSectionJumpSide(side);
+    set({ sectionJumpSide: side });
+  },
+  setSectionJumpAutoHide: (enabled) => {
+    persistSectionJumpAutoHide(enabled);
+    set({ sectionJumpAutoHide: enabled });
+  },
 
   /**
    * Tier 1: Restore personal data from users/{uid}/… on login.

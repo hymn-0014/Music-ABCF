@@ -8,6 +8,59 @@ import ConfirmDialog from '../components/ConfirmDialog';
 const linesToText = (lines: { chords: string; lyrics: string }[]): string =>
   lines.map((line) => line.chords && line.chords.trim() ? `${line.chords}\n${line.lyrics}` : line.lyrics).join('\n');
 
+type EditableRowKind = 'chord' | 'lyric';
+
+const linesToEditableRows = (lines: { chords: string; lyrics: string }[]): { text: string; kind: EditableRowKind }[] => {
+  const rows: { text: string; kind: EditableRowKind }[] = [];
+  lines.forEach((line) => {
+    if (line.chords) rows.push({ text: line.chords, kind: 'chord' });
+    if (line.lyrics) rows.push({ text: line.lyrics, kind: 'lyric' });
+  });
+  return rows;
+};
+
+const parseUsingOriginalRowKinds = (
+  rawText: string,
+  originalRows: { text: string; kind: EditableRowKind }[],
+): { lines: { chords: string; lyrics: string }[]; key: string } | null => {
+  const editedRows = rawText.replace(/\r\n/g, '\n').split('\n');
+  if (editedRows.length !== originalRows.length) return null;
+
+  const parsedLines: { chords: string; lyrics: string }[] = [];
+  let pendingChord: string | null = null;
+
+  for (let i = 0; i < editedRows.length; i += 1) {
+    const text = editedRows[i] ?? '';
+    const kind = originalRows[i].kind;
+
+    if (kind === 'chord') {
+      if (pendingChord !== null) parsedLines.push({ chords: pendingChord, lyrics: '' });
+      pendingChord = text;
+      continue;
+    }
+
+    if (pendingChord !== null) {
+      parsedLines.push({ chords: pendingChord, lyrics: text });
+      pendingChord = null;
+    } else {
+      parsedLines.push({ chords: '', lyrics: text });
+    }
+  }
+
+  if (pendingChord !== null) parsedLines.push({ chords: pendingChord, lyrics: '' });
+
+  const firstChordToken = parsedLines
+    .find((line) => line.chords.trim())
+    ?.chords.trim()
+    .split(/\s+/)[0] ?? '';
+  const keyMatch = firstChordToken.match(/^([A-G][#b]?)/);
+
+  return {
+    lines: parsedLines,
+    key: keyMatch ? keyMatch[1] : 'C',
+  };
+};
+
 const EditSongScreen = () => {
   const navigate = useNavigate();
   const { songId } = useParams<{ songId: string }>();
@@ -22,6 +75,7 @@ const EditSongScreen = () => {
   const [artist, setArtist] = useState(song?.artist ?? '');
   const [tempo, setTempo] = useState(String(song?.tempo ?? 90));
   const [chordText, setChordText] = useState(song ? linesToText(song.lines) : '');
+  const [originalRows] = useState(song ? linesToEditableRows(song.lines) : []);
   const [status, setStatus] = useState('');
   const [cloudSyncing, setCloudSyncing] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
@@ -40,7 +94,10 @@ const EditSongScreen = () => {
 
   const handleSave = () => {
     if (!chordText.trim()) { setStatus('Chord text cannot be empty.'); return; }
-    const result = parseChordsFromText(chordText, title, artist);
+    const preserved = parseUsingOriginalRowKinds(chordText, originalRows);
+    const result = preserved
+      ? { title: title || song.title, artist: artist || song.artist, key: preserved.key, lines: preserved.lines }
+      : parseChordsFromText(chordText, title, artist);
     if (!result || result.lines.length === 0) { setStatus('Could not parse chords.'); return; }
     updateSong(songId!, { title: title || song.title, artist: artist || song.artist, key: result.key || song.key, tempo: parsedTempo, lines: result.lines });
     window.alert(`"${title || song.title}" updated!`);
@@ -49,7 +106,10 @@ const EditSongScreen = () => {
 
   const handleSaveAndSync = async () => {
     if (!chordText.trim()) { setStatus('Chord text cannot be empty.'); return; }
-    const result = parseChordsFromText(chordText, title, artist);
+    const preserved = parseUsingOriginalRowKinds(chordText, originalRows);
+    const result = preserved
+      ? { title: title || song.title, artist: artist || song.artist, key: preserved.key, lines: preserved.lines }
+      : parseChordsFromText(chordText, title, artist);
     if (!result || result.lines.length === 0) { setStatus('Could not parse chords.'); return; }
     updateSong(songId!, { title: title || song.title, artist: artist || song.artist, key: result.key || song.key, tempo: parsedTempo, lines: result.lines });
     setCloudSyncing(true);

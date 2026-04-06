@@ -42,6 +42,12 @@ const SettingsScreen = () => {
   const toggleDarkMode = useAppStore((s) => s.toggleDarkMode);
   const accidental = useAppStore((s) => s.accidental);
   const setAccidental = useAppStore((s) => s.setAccidental);
+  const sectionJumpEnabled = useAppStore((s) => s.sectionJumpEnabled);
+  const sectionJumpSide = useAppStore((s) => s.sectionJumpSide);
+  const sectionJumpAutoHide = useAppStore((s) => s.sectionJumpAutoHide);
+  const setSectionJumpEnabled = useAppStore((s) => s.setSectionJumpEnabled);
+  const setSectionJumpSide = useAppStore((s) => s.setSectionJumpSide);
+  const setSectionJumpAutoHide = useAppStore((s) => s.setSectionJumpAutoHide);
   const smartPushToCloud = useAppStore((s) => s.smartPushToCloud);
   const smartPullFromCloud = useAppStore((s) => s.smartPullFromCloud);
   const songs = useAppStore((s) => s.songs);
@@ -164,6 +170,55 @@ const SettingsScreen = () => {
               <span className="toggle-slider" />
             </label>
           </div>
+          <div className="settings-divider" />
+          <div className="settings-row">
+            <div className="settings-row-left">
+              <span className="settings-icon">🧭</span>
+              <span>Section Jump Buttons</span>
+            </div>
+            <label className="toggle-switch">
+              <input type="checkbox" checked={sectionJumpEnabled} onChange={(e) => setSectionJumpEnabled(e.target.checked)} />
+              <span className="toggle-slider" />
+            </label>
+          </div>
+          {sectionJumpEnabled && (
+            <>
+              <div className="settings-divider" />
+              <div className="settings-row">
+                <div className="settings-row-left">
+                  <span className="settings-icon">↔️</span>
+                  <span>Section Button Side</span>
+                </div>
+                <div className="settings-pill-group">
+                  <button
+                    className={`toggle-pill ${sectionJumpSide === 'left' ? 'active' : ''}`}
+                    onClick={() => setSectionJumpSide('left')}
+                    type="button"
+                  >
+                    Left
+                  </button>
+                  <button
+                    className={`toggle-pill ${sectionJumpSide === 'right' ? 'active' : ''}`}
+                    onClick={() => setSectionJumpSide('right')}
+                    type="button"
+                  >
+                    Right
+                  </button>
+                </div>
+              </div>
+              <div className="settings-divider" />
+              <div className="settings-row">
+                <div className="settings-row-left">
+                  <span className="settings-icon">👁️</span>
+                  <span>Auto-hide While Idle</span>
+                </div>
+                <label className="toggle-switch">
+                  <input type="checkbox" checked={sectionJumpAutoHide} onChange={(e) => setSectionJumpAutoHide(e.target.checked)} />
+                  <span className="toggle-slider" />
+                </label>
+              </div>
+            </>
+          )}
         </div>
       </div>
 

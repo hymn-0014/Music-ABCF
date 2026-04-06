@@ -25,6 +25,9 @@ const SongChordViewer: React.FC<SongChordViewerProps> = ({ song }) => {
   const setMetronomeEnabled = useAppStore((state) => state.setMetronomeEnabled);
   const setAutoScrollEnabled = useAppStore((state) => state.setAutoScrollEnabled);
   const setAutoScrollSpeed = useAppStore((state) => state.setAutoScrollSpeed);
+  const sectionJumpEnabled = useAppStore((state) => state.sectionJumpEnabled);
+  const sectionJumpSide = useAppStore((state) => state.sectionJumpSide);
+  const sectionJumpAutoHide = useAppStore((state) => state.sectionJumpAutoHide);
   const updateSong = useAppStore((state) => state.updateSong);
   const [showPlayback, setShowPlayback] = useState(false);
   const [editMode, setEditMode] = useState(false);
@@ -225,6 +228,9 @@ const SongChordViewer: React.FC<SongChordViewerProps> = ({ song }) => {
         editMode={editMode}
         columns={columns}
         viewMode={viewMode}
+        sectionJumpEnabled={sectionJumpEnabled}
+        sectionJumpSide={sectionJumpSide}
+        sectionJumpAutoHide={sectionJumpAutoHide}
         onLinesChange={(newLines: ChordLyricLine[]) => updateSong(song.id, { lines: newLines })}
       />
     </div>

@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { ChordLyricLine, NotationMode, AccidentalPreference } from '../types';
 import { transposeLine, nashvilleLineFromChords } from '../utils/chordTranspose';
 
@@ -13,11 +13,71 @@ interface LyricsViewerProps {
   editMode?: boolean;
   columns?: 1 | 2;
   viewMode?: 'all' | 'chords' | 'lyrics';
+  sectionJumpEnabled?: boolean;
+  sectionJumpSide?: 'left' | 'right';
+  sectionJumpAutoHide?: boolean;
   onLinesChange?: (newLines: ChordLyricLine[]) => void;
 }
 
 const CHORD_COLOR = '#4FC3F7';
 const SECTION_PATTERN = /^\[.*\]$/;
+const SECTION_KEYWORD_PATTERN = /^(?:intro|verse|chorus|refrain|bridge|pre[\s-]?chorus|post[\s-]?chorus|interlude|instrumental|tag|hook|outro|ending|coda)$/i;
+
+interface SectionInfo {
+  label: string;
+  short: string;
+}
+
+const sectionAbbreviations: Record<string, string> = {
+  intro: 'I',
+  verse: 'V',
+  chorus: 'C',
+  refrain: 'R',
+  bridge: 'B',
+  prechorus: 'PC',
+  postchorus: 'POC',
+  interlude: 'IN',
+  instrumental: 'INST',
+  tag: 'T',
+  hook: 'H',
+  outro: 'O',
+  ending: 'END',
+  coda: 'CODA',
+};
+
+function parseSectionInfo(text: string): SectionInfo | null {
+  const trimmed = text.trim();
+  if (!trimmed) return null;
+
+  const normalized = trimmed
+    .replace(/^\[\s*/, '')
+    .replace(/\s*\]$/, '')
+    .replace(/[:.\-]+$/, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  if (!normalized) return null;
+
+  const sectionMatch = normalized.match(/^([A-Za-z][A-Za-z\s-]*?)(?:\s+(\d+|[ivxIVX]+|[A-Za-z]))?(?:\s*[xX]\s*\d+)?$/);
+  if (!sectionMatch) return null;
+
+  const sectionName = sectionMatch[1].trim();
+  if (!SECTION_KEYWORD_PATTERN.test(sectionName)) return null;
+
+  const suffix = sectionMatch[2] ? sectionMatch[2].toUpperCase() : '';
+  const key = sectionName.toLowerCase().replace(/[\s-]/g, '');
+  const base = sectionAbbreviations[key] ?? sectionName.slice(0, 2).toUpperCase();
+
+  return {
+    label: normalized,
+    short: `${base}${suffix}`,
+  };
+}
+
+function isSectionLine(text: string): boolean {
+  if (SECTION_PATTERN.test(text.trim())) return true;
+  return parseSectionInfo(text) !== null;
+}
 const CHORD_PATTERN = /(?:[A-G][#b]?(?:maj|min|m|dim|aug|sus|add|M)?(?:\d+)?(?:(?:sus|add|aug|dim|maj|min|m|b|#)\d*)*(?:\([^)]*\))?(?:\/[A-G][#b]?)?|b?[1-7][#b]?(?:maj|min|m|dim|aug|sus|add|M)?(?:\d+)?(?:(?:sus|add|aug|dim|maj|min|m|b|#)\d*)*(?:\([^)]*\))?(?:\/b?[1-7][#b]?)?)/g;
 
 function renderColoredChordLine(chordLine: string): React.ReactNode[] {
@@ -46,14 +106,54 @@ interface RenderLine {
   displayChords: string;
   isSection: boolean;
   lyrics: string;
+  sectionInfo: SectionInfo | null;
 }
 
 const LyricsViewer: React.FC<LyricsViewerProps> = ({
-  lines, transpose, songKey, notation, accidental, autoScrollEnabled, autoScrollSpeed, editMode, columns = 1, viewMode = 'all', onLinesChange,
+  lines, transpose, songKey, notation, accidental, autoScrollEnabled, autoScrollSpeed, editMode, columns = 1, viewMode = 'all', sectionJumpEnabled = true, sectionJumpSide = 'right', sectionJumpAutoHide = false, onLinesChange,
 }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const isAutoScrollingRef = useRef(false);
   const isEditingRef = useRef(false);
+  const hideNavTimerRef = useRef<number | null>(null);
+  const [showSectionJumpNav, setShowSectionJumpNav] = useState(!sectionJumpAutoHide);
+
+  useEffect(() => {
+    setShowSectionJumpNav(!sectionJumpAutoHide);
+  }, [sectionJumpAutoHide]);
+
+  useEffect(() => {
+    if (!sectionJumpEnabled || !sectionJumpAutoHide) {
+      if (hideNavTimerRef.current !== null) {
+        window.clearTimeout(hideNavTimerRef.current);
+        hideNavTimerRef.current = null;
+      }
+      return undefined;
+    }
+
+    const root = scrollRef.current;
+    if (!root) return undefined;
+
+    const showTemporarily = () => {
+      setShowSectionJumpNav(true);
+      if (hideNavTimerRef.current !== null) {
+        window.clearTimeout(hideNavTimerRef.current);
+      }
+      hideNavTimerRef.current = window.setTimeout(() => {
+        setShowSectionJumpNav(false);
+        hideNavTimerRef.current = null;
+      }, 900);
+    };
+
+    root.addEventListener('scroll', showTemporarily, { passive: true });
+    return () => {
+      root.removeEventListener('scroll', showTemporarily);
+      if (hideNavTimerRef.current !== null) {
+        window.clearTimeout(hideNavTimerRef.current);
+        hideNavTimerRef.current = null;
+      }
+    };
+  }, [sectionJumpAutoHide, sectionJumpEnabled]);
 
   useEffect(() => {
     if (!autoScrollEnabled) { isAutoScrollingRef.current = false; return; }
@@ -85,7 +185,7 @@ const LyricsViewer: React.FC<LyricsViewerProps> = ({
     if (!current.lyrics || current.chords) return; // only for lyric-only lines
     const text = current.lyrics;
     const next = newLines[index + 1];
-    if (next && !next.chords && next.lyrics && !SECTION_PATTERN.test(next.lyrics.trim())) {
+    if (next && !next.chords && next.lyrics && !isSectionLine(next.lyrics)) {
       // Merge: current lyrics → chords, next lyrics stay
       newLines.splice(index, 2, { chords: text, lyrics: next.lyrics });
     } else {
@@ -112,6 +212,7 @@ const LyricsViewer: React.FC<LyricsViewerProps> = ({
   };
 
   const renderedLines: RenderLine[] = lines.map((line, index) => {
+    const sectionInfo = line.lyrics ? parseSectionInfo(line.lyrics) : null;
     let displayChords = line.chords;
     if (displayChords) {
       displayChords = transposeLine(displayChords, transpose, accidental);
@@ -121,10 +222,19 @@ const LyricsViewer: React.FC<LyricsViewerProps> = ({
     return {
       index,
       displayChords,
-      isSection: !!(line.lyrics && SECTION_PATTERN.test(line.lyrics.trim())),
+      isSection: !!(line.lyrics && isSectionLine(line.lyrics)),
       lyrics: line.lyrics,
+      sectionInfo,
     };
   });
+
+  const sectionNavItems = renderedLines
+    .filter((line) => line.sectionInfo)
+    .map((line) => ({
+      index: line.index,
+      label: line.sectionInfo!.label,
+      short: line.sectionInfo!.short,
+    }));
 
   const midpoint = columns === 2 ? Math.ceil(renderedLines.length / 2) : renderedLines.length;
   const columnGroups = columns === 2
@@ -136,7 +246,7 @@ const LyricsViewer: React.FC<LyricsViewerProps> = ({
   const showSectionLabels = true;
 
   const renderLineBlock = (line: RenderLine) => (
-    <div key={line.index} className={`line-block${editMode ? ' line-block-edit' : ''}`}>
+    <div key={line.index} className={`line-block${editMode ? ' line-block-edit' : ''}`} data-line-index={line.index}>
       {showChords && line.displayChords ? (
         <div className="chord-line-row">
           <div className="chord-line">{renderColoredChordLine(line.displayChords)}</div>
@@ -164,6 +274,26 @@ const LyricsViewer: React.FC<LyricsViewerProps> = ({
 
   return (
     <div className={`lyrics-container${columns === 2 ? ' lyrics-two-columns' : ''}`} ref={scrollRef}>
+      {sectionJumpEnabled && sectionNavItems.length > 0 && (
+        <div className={`section-jump-nav ${sectionJumpSide === 'left' ? 'left' : 'right'}${showSectionJumpNav ? '' : ' is-hidden'}`}>
+          {sectionNavItems.map((item) => (
+            <button
+              key={`${item.index}-${item.short}`}
+              className="section-jump-btn"
+              title={item.label}
+              onClick={() => {
+                const root = scrollRef.current;
+                if (!root) return;
+                const target = root.querySelector(`[data-line-index="${item.index}"]`) as HTMLElement | null;
+                if (!target) return;
+                root.scrollTo({ top: Math.max(0, target.offsetTop - 12), behavior: 'smooth' });
+              }}
+            >
+              {item.short}
+            </button>
+          ))}
+        </div>
+      )}
       {columnGroups.map((group, columnIndex) => (
         <div key={columnIndex} className="lyrics-column">
           {group.map(renderLineBlock)}
