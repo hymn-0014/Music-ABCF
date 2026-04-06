@@ -837,6 +837,17 @@ a { color: #4FC3F7; text-decoration: none; }
 }
 
 /* ===== Lyrics / Chords ===== */
+.lyrics-viewer-shell {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+}
+.lyrics-viewer-shell.has-section-jump-left .lyrics-container {
+  padding-left: 64px;
+}
+.lyrics-viewer-shell.has-section-jump-right .lyrics-container {
+  padding-right: 64px;
+}
 .lyrics-container {
   flex: 1;
   min-height: 0;
@@ -849,7 +860,6 @@ a { color: #4FC3F7; text-decoration: none; }
   font-family: 'Courier New', Courier, monospace;
   font-size: 15px;
   line-height: 1.5;
-  position: relative;
 }
 .lyrics-two-columns {
   display: grid;
@@ -865,6 +875,12 @@ a { color: #4FC3F7; text-decoration: none; }
   padding-left: 24px;
 }
 @media (max-width: 600px) {
+  .lyrics-viewer-shell.has-section-jump-left .lyrics-container {
+    padding-left: 54px;
+  }
+  .lyrics-viewer-shell.has-section-jump-right .lyrics-container {
+    padding-right: 54px;
+  }
   .lyrics-two-columns {
     grid-template-columns: 1fr;
     gap: 16px;
@@ -903,41 +919,56 @@ a { color: #4FC3F7; text-decoration: none; }
 
 /* ===== Section jump rail ===== */
 .section-jump-nav {
-  position: sticky;
-  top: 10px;
-  z-index: 3;
-  width: 0;
+  position: absolute;
+  top: 12px;
+  bottom: 12px;
+  z-index: 4;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: center;
+  max-height: calc(100% - 24px);
+  overflow-y: auto;
   pointer-events: none;
   opacity: 1;
   transition: opacity 0.2s ease;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.section-jump-nav::-webkit-scrollbar {
+  display: none;
 }
 .section-jump-nav.left {
-  left: 0;
+  left: 10px;
 }
 .section-jump-nav.right {
-  margin-left: auto;
-  right: 0;
+  right: 10px;
 }
 .section-jump-btn {
   pointer-events: auto;
-  display: block;
-  margin: 0 0 6px;
-  min-width: 42px;
-  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 40px;
+  height: 26px;
   border-radius: 999px;
   border: 1px solid #2D5F7C;
-  background: rgba(15, 94, 134, 0.92);
+  background: rgba(15, 94, 134, 0.52);
   color: #FFFFFF;
   font-size: 11px;
   font-weight: 800;
   letter-spacing: 0.2px;
   cursor: pointer;
-  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.22);
-  transition: transform 0.12s, background 0.12s;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.14);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  transition: transform 0.12s, background 0.12s, opacity 0.12s;
+  opacity: 0.76;
 }
 .section-jump-btn:hover {
   transform: translateY(-1px);
-  background: rgba(12, 74, 110, 0.96);
+  background: rgba(12, 74, 110, 0.72);
+  opacity: 0.96;
 }
 .section-jump-nav.is-hidden {
   opacity: 0;
@@ -1858,11 +1889,11 @@ html:not(.dark) .section-label {
 
 html:not(.dark) .section-jump-btn {
   border-color: #BFDBFE;
-  background: rgba(3, 105, 161, 0.9);
+  background: rgba(3, 105, 161, 0.44);
   color: #FFFFFF;
 }
 html:not(.dark) .section-jump-btn:hover {
-  background: rgba(12, 74, 110, 0.94);
+  background: rgba(12, 74, 110, 0.62);
 }
 
 /* --- 9. Inputs & controls ---------------------------------- */
@@ -2482,11 +2513,11 @@ html.dark .section-label {
 }
 html.dark .section-jump-btn {
   border-color: #2A2A2A;
-  background: rgba(32, 161, 220, 0.92);
-  color: #0D1117;
+  background: rgba(79, 195, 247, 0.4);
+  color: #EAF8FF;
 }
 html.dark .section-jump-btn:hover {
-  background: rgba(79, 195, 247, 0.98);
+  background: rgba(79, 195, 247, 0.58);
 }
 html.dark .notation-label {
   color: #E0E0E0;

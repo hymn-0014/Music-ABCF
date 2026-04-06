@@ -272,9 +272,11 @@ const LyricsViewer: React.FC<LyricsViewerProps> = ({
     </div>
   );
 
+  const hasSectionJump = sectionJumpEnabled && sectionNavItems.length > 0;
+
   return (
-    <div className={`lyrics-container${columns === 2 ? ' lyrics-two-columns' : ''}`} ref={scrollRef}>
-      {sectionJumpEnabled && sectionNavItems.length > 0 && (
+    <div className={`lyrics-viewer-shell${hasSectionJump ? ` has-section-jump-${sectionJumpSide}` : ''}`}>
+      {hasSectionJump && (
         <div className={`section-jump-nav ${sectionJumpSide === 'left' ? 'left' : 'right'}${showSectionJumpNav ? '' : ' is-hidden'}`}>
           {sectionNavItems.map((item) => (
             <button
@@ -294,11 +296,13 @@ const LyricsViewer: React.FC<LyricsViewerProps> = ({
           ))}
         </div>
       )}
-      {columnGroups.map((group, columnIndex) => (
-        <div key={columnIndex} className="lyrics-column">
-          {group.map(renderLineBlock)}
-        </div>
-      ))}
+      <div className={`lyrics-container${columns === 2 ? ' lyrics-two-columns' : ''}`} ref={scrollRef}>
+        {columnGroups.map((group, columnIndex) => (
+          <div key={columnIndex} className="lyrics-column">
+            {group.map(renderLineBlock)}
+          </div>
+        ))}
+      </div>
     </div>
   );
 };
