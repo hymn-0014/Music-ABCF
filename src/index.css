@@ -537,6 +537,7 @@ a { color: #4FC3F7; text-decoration: none; }
   flex-direction: column;
   height: 100vh;
   overflow: hidden;
+  overscroll-behavior: none;
   background: #F4F7FB;
   touch-action: pan-y;
 }
@@ -747,6 +748,7 @@ a { color: #4FC3F7; text-decoration: none; }
 .fullscreen-active .lyrics-container {
   background: #121212;
   color: #EEEEEE;
+  overscroll-behavior-y: none;
 }
 .fullscreen-active .toolbar {
   background: #1A1A2E;
@@ -839,6 +841,8 @@ a { color: #4FC3F7; text-decoration: none; }
 /* ===== Lyrics / Chords ===== */
 .lyrics-viewer-shell {
   position: relative;
+  display: flex;
+  flex-direction: column;
   flex: 1;
   min-height: 0;
 }
@@ -850,6 +854,7 @@ a { color: #4FC3F7; text-decoration: none; }
 }
 .lyrics-container {
   flex: 1;
+  height: 100%;
   min-height: 0;
   overflow-y: auto;
   overscroll-behavior-y: contain;

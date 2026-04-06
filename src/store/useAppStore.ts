@@ -187,7 +187,7 @@ interface AppState {
   smartPullFromCloud: (confirm: SyncConfirmFn) => Promise<SyncResult>;
   // setlist-level sync
   fetchCloudSetlists: () => Promise<Setlist[]>;
-  uploadSetlist: (setlistId: string) => Promise<{ songsUploaded: number; warnings: string[] }>;
+  uploadSetlist: (setlistId: string) => Promise<{ songsUploaded: number; songsUpdated: number; warnings: string[] }>;
   downloadSetlist: (setlist: Setlist) => Promise<{ songsDownloaded: number; warnings: string[] }>;
 }
 
@@ -682,7 +682,7 @@ const useAppStore = create<AppState>((set, get) => ({
     return prepareSetlists(await fetchSetlistsFromFirestore(uid));
   },
 
-  uploadSetlist: async (setlistId: string): Promise<{ songsUploaded: number; warnings: string[] }> => {
+  uploadSetlist: async (setlistId: string): Promise<{ songsUploaded: number; songsUpdated: number; warnings: string[] }> => {
     const { uid, songs, setlists } = get();
     if (!uid) throw new Error('Not signed in');
 
@@ -704,6 +704,7 @@ const useAppStore = create<AppState>((set, get) => ({
     const cloudSongById = new Map(cloudSongs.map((s) => [s.id, s] as const));
 
     let songsUploaded = 0;
+    let songsUpdated = 0;
     const warnings: string[] = [];
     for (const songId of setlist.songIds) {
       const localSong = songs.find((s) => s.id === songId);
@@ -716,24 +717,17 @@ const useAppStore = create<AppState>((set, get) => ({
         cloudSongById.set(songId, localSong);
         songsUploaded++;
       } else if (!songsContentEqual(localSong, cloudSong)) {
-        // Content differs — check timestamps
-        const tsDiff = compareTimestamps(localSong.lastModifiedAt, cloudSong.lastModifiedAt);
-        if (tsDiff < 0) {
-          // Cloud is newer — don't overwrite
-          warnings.push(`"${localSong.title}" skipped: cloud version is newer (${cloudSong.lastModifiedAt ? new Date(cloudSong.lastModifiedAt).toLocaleString() : 'unknown'})`);
-        } else {
-          // Local is newer or same age — upload
-          await uploadSingleSong(uid, localSong);
-          cloudSongById.set(songId, localSong);
-          songsUploaded++;
-        }
+        // Explicit setlist upload should publish the currently edited local content.
+        await uploadSingleSong(uid, localSong);
+        cloudSongById.set(songId, localSong);
+        songsUpdated++;
       }
     }
 
     // Upload setlist after songs so all referenced song IDs exist in cloud.
     await uploadSingleSetlist(uid, setlist);
 
-    return { songsUploaded, warnings };
+    return { songsUploaded, songsUpdated, warnings };
   },
 
   downloadSetlist: async (cloudSetlist: Setlist): Promise<{ songsDownloaded: number; warnings: string[] }> => {

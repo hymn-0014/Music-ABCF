@@ -39,24 +39,10 @@ const SongChordViewer: React.FC<SongChordViewerProps> = ({ song }) => {
   );
   const audioContextRef = useRef<AudioContext | null>(null);
 
-  const supportsNativeFullscreen = !!document.documentElement.requestFullscreen
-    || !!(document.documentElement as any).webkitRequestFullscreen;
-
   const toggleFullscreen = useCallback(() => {
-    const viewerLayout = document.querySelector('.viewer-layout');
-    if (supportsNativeFullscreen) {
-      if (!document.fullscreenElement && !(document as any).webkitFullscreenElement) {
-        if (viewerLayout && (viewerLayout as any).requestFullscreen) (viewerLayout as any).requestFullscreen();
-        else if (viewerLayout && (viewerLayout as any).webkitRequestFullscreen) (viewerLayout as any).webkitRequestFullscreen();
-      } else {
-        if (document.exitFullscreen) document.exitFullscreen();
-        else if ((document as any).webkitExitFullscreen) (document as any).webkitExitFullscreen();
-      }
-    } else {
-      // Dispatch custom event so ViewerScreen can manage the CSS fallback state
-      window.dispatchEvent(new CustomEvent('toggle-fullscreen-fallback'));
-    }
-  }, [supportsNativeFullscreen]);
+    // Let ViewerScreen be the single source of truth for fullscreen behavior.
+    window.dispatchEvent(new CustomEvent('toggle-viewer-fullscreen'));
+  }, []);
 
   useEffect(() => {
     const handler = () => setIsFullscreen(

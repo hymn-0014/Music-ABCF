@@ -243,7 +243,7 @@ const LyricsViewer: React.FC<LyricsViewerProps> = ({
 
   const showChords = viewMode !== 'lyrics';
   const showLyrics = viewMode !== 'chords';
-  const showSectionLabels = true;
+  const showSectionLabels = showLyrics;
 
   const renderLineBlock = (line: RenderLine) => (
     <div key={line.index} className={`line-block${editMode ? ' line-block-edit' : ''}`} data-line-index={line.index}>

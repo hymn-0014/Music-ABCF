@@ -100,11 +100,18 @@ const ViewerScreen = () => {
 
   // Listen for toggle requests from SongChordViewer's action-bar button
   useEffect(() => {
-    if (supportsNativeFullscreen) return;
-    const handler = () => setIsFullscreen((prev) => !prev);
+    const handler = () => {
+      toggleFullscreen();
+    };
+    // New unified event
+    window.addEventListener('toggle-viewer-fullscreen', handler);
+    // Backward compatibility with older dispatchers
     window.addEventListener('toggle-fullscreen-fallback', handler);
-    return () => window.removeEventListener('toggle-fullscreen-fallback', handler);
-  }, [supportsNativeFullscreen]);
+    return () => {
+      window.removeEventListener('toggle-viewer-fullscreen', handler);
+      window.removeEventListener('toggle-fullscreen-fallback', handler);
+    };
+  }, [toggleFullscreen]);
 
   // Allow Escape key to exit CSS-based fullscreen fallback
   useEffect(() => {

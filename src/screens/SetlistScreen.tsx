@@ -76,8 +76,12 @@ const SetlistScreen = () => {
     setCloudSyncing(true);
     try {
       const result = await useAppStore.getState().uploadSetlist(editing.id);
-      const songMsg = result.songsUploaded > 0 ? `, ${result.songsUploaded} song(s) uploaded` : '';
-      let nextStatus = `"${editingName.trim() || editing.name}" updated in cloud${songMsg}.`;
+      const uploadedMsg = result.songsUploaded > 0 ? `, ${result.songsUploaded} new song(s) uploaded` : '';
+      const updatedMsg = result.songsUpdated > 0 ? `, ${result.songsUpdated} edited song(s) updated` : '';
+      let nextStatus = `"${editingName.trim() || editing.name}" updated in cloud${uploadedMsg}${updatedMsg}.`;
+      if (result.songsUpdated > 0) {
+        nextStatus += ' Edited song lines were pushed to cloud.';
+      }
       if (result.warnings.length > 0) {
         nextStatus += ` Warnings: ${result.warnings.join(' | ')}`;
       }

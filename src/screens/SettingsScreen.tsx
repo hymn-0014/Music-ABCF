@@ -111,8 +111,12 @@ const SettingsScreen = () => {
     try {
       const result = await uploadSetlist(setlistId);
       const sl = setlists.find((s) => s.id === setlistId);
-      const songMsg = result.songsUploaded > 0 ? `, ${result.songsUploaded} song(s) uploaded` : '';
-      let msg = `✓ "${sl?.name}" uploaded${songMsg}`;
+      const uploadedMsg = result.songsUploaded > 0 ? `, ${result.songsUploaded} new song(s) uploaded` : '';
+      const updatedMsg = result.songsUpdated > 0 ? `, ${result.songsUpdated} edited song(s) updated in cloud` : '';
+      let msg = `✓ "${sl?.name}" uploaded${uploadedMsg}${updatedMsg}`;
+      if (result.songsUpdated > 0) {
+        msg += '\nℹ Edited song lines were pushed to cloud.';
+      }
       if (result.warnings.length > 0) {
         msg += '\n⚠ ' + result.warnings.join('\n⚠ ');
       }
