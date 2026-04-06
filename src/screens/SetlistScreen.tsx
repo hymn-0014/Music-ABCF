@@ -13,11 +13,15 @@ const SetlistScreen = () => {
   const deleteSetlist = useAppStore((s) => s.deleteSetlist);
   const setCurrentSetlistId = useAppStore((s) => s.setCurrentSetlistId);
   const setCurrentSongId = useAppStore((s) => s.setCurrentSongId);
+  const uploadSetlist = useAppStore((s) => s.uploadSetlist);
   const userEmail = useAppStore((s) => s.userEmail);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [newName, setNewName] = useState('');
+  const [editingName, setEditingName] = useState('');
   const [showHistory, setShowHistory] = useState(false);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [status, setStatus] = useState('');
+  const [cloudSyncing, setCloudSyncing] = useState(false);
 
   const addSetlist = () => {
     if (!newName.trim()) return;
@@ -33,11 +37,89 @@ const SetlistScreen = () => {
 
   const editing = setlists.find((sl) => sl.id === editingId);
 
+  const handleRenameSetlist = (): boolean => {
+    if (!editing) return;
+    const trimmedName = editingName.trim();
+    if (!trimmedName) {
+      setStatus('Setlist name cannot be empty.');
+      return false;
+    }
+    if (trimmedName === editing.name) return false;
+
+    const now = new Date().toISOString();
+    const email = userEmail || 'unknown';
+    const entry: ModificationEntry = { userEmail: email, action: 'renamed', timestamp: now };
+
+    setSetlists(setlists.map((sl) => (
+      sl.id === editing.id
+        ? {
+            ...sl,
+            name: trimmedName,
+            lastModifiedBy: email,
+            lastModifiedAt: now,
+            modificationHistory: [...(sl.modificationHistory || []), entry],
+          }
+        : sl
+    )));
+    setStatus('Setlist name saved.');
+    return true;
+  };
+
+  const handleRenameAndSync = async () => {
+    if (!editing) return;
+
+    const renamed = handleRenameSetlist();
+    if (!renamed && editingName.trim() !== editing.name) {
+      return;
+    }
+
+    setCloudSyncing(true);
+    try {
+      const result = await useAppStore.getState().uploadSetlist(editing.id);
+      const songMsg = result.songsUploaded > 0 ? `, ${result.songsUploaded} song(s) uploaded` : '';
+      let nextStatus = `"${editingName.trim() || editing.name}" updated in cloud${songMsg}.`;
+      if (result.warnings.length > 0) {
+        nextStatus += ` Warnings: ${result.warnings.join(' | ')}`;
+      }
+      setStatus(nextStatus);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      setStatus(`Saved locally but cloud update failed: ${message}`);
+    } finally {
+      setCloudSyncing(false);
+    }
+  };
+
   if (editing) {
     return (
       <div className="screen">
-        <button className="text-btn" onClick={() => setEditingId(null)}>← Back</button>
-        <h2 className="section-title" style={{ paddingLeft: 16 }}>{editing.name}</h2>
+        <button className="text-btn" onClick={() => { setEditingId(null); setEditingName(''); }}>← Back</button>
+        <div className="add-row" style={{ padding: '0 16px' }}>
+          <input
+            className="input-field"
+            placeholder="Setlist name"
+            value={editingName}
+            onChange={(e) => { setEditingName(e.target.value); setStatus(''); }}
+            onKeyDown={(e) => { if (e.key === 'Enter') handleRenameSetlist(); }}
+          />
+          <button
+            className="btn-primary small"
+            onClick={handleRenameSetlist}
+            disabled={!editingName.trim() || editingName.trim() === editing.name}
+            title="Save setlist name"
+          >
+            Save
+          </button>
+        </div>
+        <div style={{ padding: '8px 16px 0' }}>
+          <button
+            className="btn-success full-width"
+            onClick={handleRenameAndSync}
+            disabled={cloudSyncing || !editingName.trim()}
+          >
+            {cloudSyncing ? 'Syncing…' : '☁️ Save Name & Update Cloud'}
+          </button>
+        </div>
         <p className="section-subtitle">{editing.songIds.length} songs in setlist</p>
         <SetlistManager
           availableSongs={songs}
@@ -65,6 +147,7 @@ const SetlistScreen = () => {
             ▶  Play Setlist
           </button>
         )}
+        {status && <div className="status-box"><p className="status-text">{status}</p></div>}
         {/* Modification History Toggle */}
         {(editing.lastModifiedBy || (editing.modificationHistory && editing.modificationHistory.length > 0)) && (
           <div style={{ padding: '0 16px 16px' }}>
@@ -122,7 +205,15 @@ const SetlistScreen = () => {
           </div>
         )}
         {setlists.map((item) => (
-          <div key={item.id} className="song-card" onClick={() => setEditingId(item.id)}>
+          <div
+            key={item.id}
+            className="song-card"
+            onClick={() => {
+              setEditingId(item.id);
+              setEditingName(item.name);
+              setShowHistory(false);
+            }}
+          >
             <div className="song-card-left">
               <div className="song-title">{item.name}</div>
               <div className="song-artist">{item.songIds.length} {item.songIds.length === 1 ? 'song' : 'songs'}</div>
