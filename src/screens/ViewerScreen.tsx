@@ -216,13 +216,6 @@ const ViewerScreen = () => {
           </div>
           <button className="icon-btn" title="Add to setlist" onClick={() => setPickerOpen(true)}>📋+</button>
           <button className="icon-btn" onClick={() => navigate(`/edit-song/${song.id}`)}>✏️</button>
-          <button
-            className={`icon-btn fullscreen-btn${isFullscreen ? ' active' : ''}`}
-            title={isFullscreen ? 'Exit full screen' : 'Full screen'}
-            onClick={toggleFullscreen}
-          >
-            {isFullscreen ? '⛶' : '⛶'}
-          </button>
         </div>
         {setlist && (
           <div className="viewer-setlist-info">{setlist.name} ({currentIndex + 1}/{totalInSetlist})</div>

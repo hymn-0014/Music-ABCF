@@ -151,6 +151,7 @@ const SongChordViewer: React.FC<SongChordViewerProps> = ({ song }) => {
           onClick={() => {
             const next = !lineToggleButtonsEnabled;
             setLineToggleButtonsEnabled(next);
+            if (next && !editMode) setEditMode(true);
             updateSong(song.id, { lineToggleButtonsEnabled: next });
           }}
           title={lineToggleButtonsEnabled ? 'Hide line toggles' : 'Show line toggles'}

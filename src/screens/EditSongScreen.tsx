@@ -6,7 +6,12 @@ import { uploadSingleSong } from '../services/firebaseService';
 import ConfirmDialog from '../components/ConfirmDialog';
 
 const linesToText = (lines: { chords: string; lyrics: string }[]): string =>
-  lines.map((line) => line.chords && line.chords.trim() ? `${line.chords}\n${line.lyrics}` : line.lyrics).join('\n');
+  lines.map((line) => {
+    if (line.chords && line.chords.trim()) {
+      return line.lyrics ? `${line.chords}\n${line.lyrics}` : line.chords;
+    }
+    return line.lyrics;
+  }).join('\n');
 
 type EditableRowKind = 'chord' | 'lyric';
 

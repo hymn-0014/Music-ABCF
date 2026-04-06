@@ -38,7 +38,7 @@ const SetlistScreen = () => {
   const editing = setlists.find((sl) => sl.id === editingId);
 
   const handleRenameSetlist = (): boolean => {
-    if (!editing) return;
+    if (!editing) return false;
     const trimmedName = editingName.trim();
     if (!trimmedName) {
       setStatus('Setlist name cannot be empty.');
@@ -105,24 +105,8 @@ const SetlistScreen = () => {
             value={editingName}
             onChange={(e) => { setEditingName(e.target.value); setStatus(''); }}
             onKeyDown={(e) => { if (e.key === 'Enter') handleRenameSetlist(); }}
+            onBlur={() => handleRenameSetlist()}
           />
-          <button
-            className="btn-primary small"
-            onClick={handleRenameSetlist}
-            disabled={!editingName.trim() || editingName.trim() === editing.name}
-            title="Save setlist name"
-          >
-            Save
-          </button>
-        </div>
-        <div style={{ padding: '8px 16px 0' }}>
-          <button
-            className="btn-success full-width"
-            onClick={handleRenameAndSync}
-            disabled={cloudSyncing || !editingName.trim()}
-          >
-            {cloudSyncing ? 'Syncing…' : '☁️ Save Name & Update Cloud'}
-          </button>
         </div>
         <p className="section-subtitle">{editing.songIds.length} songs in setlist</p>
         <SetlistManager

@@ -595,6 +595,13 @@ a { color: #4FC3F7; text-decoration: none; }
   text-align: center;
 }
 
+/* Hide prev/next nav on mobile & tablet (swipe is available) */
+@media (max-width: 1024px) {
+  .viewer-nav-row {
+    display: none;
+  }
+}
+
 /* ===== SongChordViewer toolbar ===== */
 .song-chord-viewer {
   display: flex;
