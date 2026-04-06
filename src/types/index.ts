@@ -16,6 +16,7 @@ export interface Song {
   key: string; // original key, e.g. "G"
   tempo: number;
   lines: ChordLyricLine[];
+  lineToggleButtonsEnabled?: boolean;
   lastModifiedBy?: string; // email of last user who modified
   lastModifiedAt?: string; // ISO date
   modificationHistory?: ModificationEntry[];

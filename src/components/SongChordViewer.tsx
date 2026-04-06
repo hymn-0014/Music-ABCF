@@ -34,10 +34,15 @@ const SongChordViewer: React.FC<SongChordViewerProps> = ({ song }) => {
   const [ribbonCollapsed, setRibbonCollapsed] = useState(false);
   const [columns, setColumns] = useState<1 | 2>(1);
   const [viewMode, setViewMode] = useState<'all' | 'chords' | 'lyrics'>('all');
+  const [lineToggleButtonsEnabled, setLineToggleButtonsEnabled] = useState(song.lineToggleButtonsEnabled ?? true);
   const [isFullscreen, setIsFullscreen] = useState(
     !!(document.fullscreenElement || (document as any).webkitFullscreenElement)
   );
   const audioContextRef = useRef<AudioContext | null>(null);
+
+  useEffect(() => {
+    setLineToggleButtonsEnabled(song.lineToggleButtonsEnabled ?? true);
+  }, [song.id, song.lineToggleButtonsEnabled]);
 
   const toggleFullscreen = useCallback(() => {
     // Let ViewerScreen be the single source of truth for fullscreen behavior.
@@ -142,6 +147,17 @@ const SongChordViewer: React.FC<SongChordViewerProps> = ({ song }) => {
           ▥
         </button>
         <button
+          className={`action-btn ${lineToggleButtonsEnabled ? 'active' : ''}`}
+          onClick={() => {
+            const next = !lineToggleButtonsEnabled;
+            setLineToggleButtonsEnabled(next);
+            updateSong(song.id, { lineToggleButtonsEnabled: next });
+          }}
+          title={lineToggleButtonsEnabled ? 'Hide line toggles' : 'Show line toggles'}
+        >
+          T↕
+        </button>
+        <button
           className={`action-btn ribbon-expand-btn ${!ribbonCollapsed ? 'active' : ''}`}
           onClick={() => setRibbonCollapsed(!ribbonCollapsed)}
           title={ribbonCollapsed ? 'Show controls' : 'Hide controls'}
@@ -214,6 +230,7 @@ const SongChordViewer: React.FC<SongChordViewerProps> = ({ song }) => {
         editMode={editMode}
         columns={columns}
         viewMode={viewMode}
+        lineToggleButtonsEnabled={lineToggleButtonsEnabled}
         sectionJumpEnabled={sectionJumpEnabled}
         sectionJumpSide={sectionJumpSide}
         sectionJumpAutoHide={sectionJumpAutoHide}

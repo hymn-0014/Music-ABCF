@@ -11,6 +11,7 @@ interface LyricsViewerProps {
   autoScrollEnabled: boolean;
   autoScrollSpeed: number;
   editMode?: boolean;
+  lineToggleButtonsEnabled?: boolean;
   columns?: 1 | 2;
   viewMode?: 'all' | 'chords' | 'lyrics';
   sectionJumpEnabled?: boolean;
@@ -110,7 +111,7 @@ interface RenderLine {
 }
 
 const LyricsViewer: React.FC<LyricsViewerProps> = ({
-  lines, transpose, songKey, notation, accidental, autoScrollEnabled, autoScrollSpeed, editMode, columns = 1, viewMode = 'all', sectionJumpEnabled = true, sectionJumpSide = 'right', sectionJumpAutoHide = false, onLinesChange,
+  lines, transpose, songKey, notation, accidental, autoScrollEnabled, autoScrollSpeed, editMode, lineToggleButtonsEnabled = true, columns = 1, viewMode = 'all', sectionJumpEnabled = true, sectionJumpSide = 'right', sectionJumpAutoHide = false, onLinesChange,
 }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const isAutoScrollingRef = useRef(false);
@@ -250,7 +251,7 @@ const LyricsViewer: React.FC<LyricsViewerProps> = ({
       {showChords && line.displayChords ? (
         <div className="chord-line-row">
           <div className="chord-line">{renderColoredChordLine(line.displayChords)}</div>
-          {editMode && (
+          {editMode && lineToggleButtonsEnabled && (
             <button className="line-toggle-btn chord-to-lyric" title="Mark as lyrics" onClick={() => markAsLyrics(line.index)}>T</button>
           )}
         </div>
@@ -263,7 +264,7 @@ const LyricsViewer: React.FC<LyricsViewerProps> = ({
         ) : showLyrics ? (
           <div className="lyric-line-row">
             <div className="lyric-line">{line.lyrics}</div>
-            {editMode && !lines[line.index].chords && (
+            {editMode && lineToggleButtonsEnabled && !lines[line.index].chords && (
               <button className="line-toggle-btn lyric-to-chord" title="Mark as chords" onClick={() => markAsChords(line.index)}>♫</button>
             )}
           </div>

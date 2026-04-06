@@ -194,6 +194,9 @@ interface AppState {
 const normalizeSong = (song: Song): Song => ({
   ...song,
   tempo: typeof song.tempo === 'number' ? Math.min(240, Math.max(40, Math.round(song.tempo))) : 90,
+  lineToggleButtonsEnabled: typeof song.lineToggleButtonsEnabled === 'boolean'
+    ? song.lineToggleButtonsEnabled
+    : true,
 });
 
 const compareSongsAlphabetically = (a: Song, b: Song): number => (
@@ -229,6 +232,7 @@ const stableJSON = (obj: unknown): string =>
 const songsContentEqual = (a: Song, b: Song): boolean => {
   if (Math.round(a.tempo ?? 90) !== Math.round(b.tempo ?? 90)) return false;
   if ((a.key ?? '').trim() !== (b.key ?? '').trim()) return false;
+  if ((a.lineToggleButtonsEnabled ?? true) !== (b.lineToggleButtonsEnabled ?? true)) return false;
   if (a.lines.length !== b.lines.length) return false;
   return stableJSON(a.lines) === stableJSON(b.lines);
 };
