@@ -141,6 +141,34 @@ export function deriveUsers(songs: Song[], setlists: Setlist[]): AdminUser[] {
   });
 }
 
+/** Merge registered users with activity-derived counts while preserving registered-only accounts */
+export function mergeUsersWithActivity(registeredUsers: AdminUser[], songs: Song[], setlists: Setlist[]): AdminUser[] {
+  const activityUsers = deriveUsers(songs, setlists);
+  if (registeredUsers.length === 0) {
+    return activityUsers;
+  }
+
+  const activityByEmail = new Map(activityUsers.map((user) => [user.email.toLowerCase(), user]));
+
+  return registeredUsers
+    .map((user) => {
+      const activity = activityByEmail.get(user.email.toLowerCase());
+      return {
+        ...user,
+        status: user.status || 'active',
+        songsCount: activity?.songsCount ?? 0,
+        setlistsCount: activity?.setlistsCount ?? 0,
+        lastActive: activity?.lastActive ?? user.lastActive,
+      };
+    })
+    .sort((a, b) => {
+      if (a.lastActive && b.lastActive) return b.lastActive.localeCompare(a.lastActive);
+      if (a.lastActive) return -1;
+      if (b.lastActive) return 1;
+      return a.email.localeCompare(b.email);
+    });
+}
+
 /** Compute basic stats */
 export function computeStats(songs: Song[], setlists: Setlist[], users: AdminUser[]): AdminStats {
   return {

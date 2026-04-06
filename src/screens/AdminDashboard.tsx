@@ -11,6 +11,7 @@ import {
   updateUserStatus,
   removeUser,
   deriveUsers,
+  mergeUsersWithActivity,
   computeStats,
   exportDataAsJson,
   checkIsAdmin,
@@ -101,30 +102,7 @@ const AdminDashboard: React.FC = () => {
       setSongs(cloudSongs);
       setSetlists(cloudSetlists);
 
-      const activityUsers = deriveUsers(cloudSongs, cloudSetlists);
-      const activityByEmail = new Map(activityUsers.map((u) => [u.email.toLowerCase(), u]));
-
-      // If we got registered users from Firestore, merge with activity data
-      // Otherwise fall back to activity-derived users
-      const mergedUsers = registeredUsers.length > 0
-        ? registeredUsers
-          .map((u) => {
-            const activity = activityByEmail.get(u.email.toLowerCase());
-            return {
-              ...u,
-              status: u.status || 'active',
-              songsCount: activity?.songsCount ?? 0,
-              setlistsCount: activity?.setlistsCount ?? 0,
-              lastActive: activity?.lastActive ?? u.lastActive,
-            };
-          })
-          .sort((a, b) => {
-            if (a.lastActive && b.lastActive) return b.lastActive.localeCompare(a.lastActive);
-            if (a.lastActive) return -1;
-            if (b.lastActive) return 1;
-            return a.email.localeCompare(b.email);
-          })
-        : activityUsers;
+      const mergedUsers = mergeUsersWithActivity(registeredUsers, cloudSongs, cloudSetlists);
 
       setUsers(mergedUsers);
       setStats(computeStats(cloudSongs, cloudSetlists, mergedUsers));
@@ -244,7 +222,7 @@ const AdminDashboard: React.FC = () => {
       // Recompute stats
       const newSongs = confirmDelete.type === 'song' ? songs.filter((s) => s.id !== confirmDelete.id) : songs;
       const newSetlists = confirmDelete.type === 'setlist' ? setlists.filter((s) => s.id !== confirmDelete.id) : setlists;
-      const newUsers = deriveUsers(newSongs, newSetlists);
+      const newUsers = mergeUsersWithActivity(users, newSongs, newSetlists);
       setUsers(newUsers);
       setStats(computeStats(newSongs, newSetlists, newUsers));
     } catch (e) {
