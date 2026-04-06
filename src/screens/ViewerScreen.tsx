@@ -3,6 +3,14 @@ import { useNavigate } from 'react-router-dom';
 import useAppStore from '../store/useAppStore';
 import SongChordViewer from '../components/SongChordViewer';
 
+const SWIPE_MIN_DISTANCE = 60;
+const SWIPE_MAX_VERTICAL_DRIFT = 48;
+
+const isSwipeIgnoredTarget = (target: EventTarget | null): boolean => {
+  if (!(target instanceof HTMLElement)) return false;
+  return Boolean(target.closest('button, input, textarea, select, a, .picker-overlay, .picker-modal, .controls-ribbon, .action-bar, .viewer-nav-row'));
+};
+
 const ViewerScreen = () => {
   const navigate = useNavigate();
   const songs = useAppStore((s) => s.songs);
@@ -15,6 +23,7 @@ const ViewerScreen = () => {
   const [pickerOpen, setPickerOpen] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const viewerRef = useRef<HTMLDivElement>(null);
+  const touchStartRef = useRef<{ x: number; y: number; ignore: boolean } | null>(null);
 
   const supportsNativeFullscreen = !!document.documentElement.requestFullscreen
     || !!(document.documentElement as any).webkitRequestFullscreen;
@@ -51,8 +60,34 @@ const ViewerScreen = () => {
   // Prevent body scroll when in CSS-based fullscreen fallback
   useEffect(() => {
     if (!supportsNativeFullscreen && isFullscreen) {
+      const scrollY = window.scrollY;
+      const prevBodyOverflow = document.body.style.overflow;
+      const prevBodyPosition = document.body.style.position;
+      const prevBodyTop = document.body.style.top;
+      const prevBodyLeft = document.body.style.left;
+      const prevBodyRight = document.body.style.right;
+      const prevBodyWidth = document.body.style.width;
+
+      document.documentElement.classList.add('fullscreen-fallback-lock');
+      document.body.classList.add('fullscreen-fallback-lock');
       document.body.style.overflow = 'hidden';
-      return () => { document.body.style.overflow = ''; };
+      document.body.style.position = 'fixed';
+      document.body.style.top = `-${scrollY}px`;
+      document.body.style.left = '0';
+      document.body.style.right = '0';
+      document.body.style.width = '100%';
+
+      return () => {
+        document.documentElement.classList.remove('fullscreen-fallback-lock');
+        document.body.classList.remove('fullscreen-fallback-lock');
+        document.body.style.overflow = prevBodyOverflow;
+        document.body.style.position = prevBodyPosition;
+        document.body.style.top = prevBodyTop;
+        document.body.style.left = prevBodyLeft;
+        document.body.style.right = prevBodyRight;
+        document.body.style.width = prevBodyWidth;
+        window.scrollTo(0, scrollY);
+      };
     }
   }, [isFullscreen, supportsNativeFullscreen]);
 
@@ -95,6 +130,42 @@ const ViewerScreen = () => {
       setCurrentSongId(setlistSongIds[currentIndex + 1]);
   };
 
+  const handleTouchStart = (event: React.TouchEvent<HTMLDivElement>) => {
+    if (event.touches.length !== 1 || pickerOpen || totalInSetlist <= 1) {
+      touchStartRef.current = null;
+      return;
+    }
+
+    const touch = event.touches[0];
+    touchStartRef.current = {
+      x: touch.clientX,
+      y: touch.clientY,
+      ignore: isSwipeIgnoredTarget(event.target),
+    };
+  };
+
+  const handleTouchEnd = (event: React.TouchEvent<HTMLDivElement>) => {
+    const start = touchStartRef.current;
+    touchStartRef.current = null;
+
+    if (!start || start.ignore || pickerOpen || totalInSetlist <= 1 || event.changedTouches.length !== 1) {
+      return;
+    }
+
+    const touch = event.changedTouches[0];
+    const deltaX = touch.clientX - start.x;
+    const deltaY = touch.clientY - start.y;
+    const absX = Math.abs(deltaX);
+    const absY = Math.abs(deltaY);
+
+    if (absX < SWIPE_MIN_DISTANCE || absY > SWIPE_MAX_VERTICAL_DRIFT || absX <= absY * 1.5) {
+      return;
+    }
+
+    if (deltaX < 0) goNext();
+    else goPrev();
+  };
+
   const addSongToSetlist = (songId: string, setlistId: string) => {
     const now = new Date().toISOString();
     const email = userEmail || 'unknown';
@@ -126,6 +197,8 @@ const ViewerScreen = () => {
     <div
       className={`viewer-layout${isFullscreen ? ' fullscreen-active' : ''}${isFullscreen && !supportsNativeFullscreen ? ' fullscreen-fallback' : ''}`}
       ref={viewerRef}
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
     >
       <div className="viewer-header">
         <div className="viewer-header-top">

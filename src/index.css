@@ -14,6 +14,11 @@ html, body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
+html.fullscreen-fallback-lock,
+body.fullscreen-fallback-lock {
+  overscroll-behavior: none;
+}
+
 #root {
   width: 100%;
   height: 100%;
@@ -533,6 +538,7 @@ a { color: #4FC3F7; text-decoration: none; }
   height: 100vh;
   overflow: hidden;
   background: #F4F7FB;
+  touch-action: pan-y;
 }
 .viewer-header {
   padding: 12px 16px 8px;
@@ -688,6 +694,7 @@ a { color: #4FC3F7; text-decoration: none; }
   z-index: 99999;
   background: #121212;
   overflow: hidden;
+  overscroll-behavior: none;
   /* Safe area insets for iPhone notch / Dynamic Island */
   padding-top: env(safe-area-inset-top);
   padding-bottom: env(safe-area-inset-bottom);
@@ -834,6 +841,8 @@ a { color: #4FC3F7; text-decoration: none; }
   flex: 1;
   min-height: 0;
   overflow-y: auto;
+  overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: touch;
   padding: 16px;
   background: #F4F7FB;
   display: block;
