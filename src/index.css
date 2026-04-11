@@ -595,10 +595,33 @@ a { color: #4FC3F7; text-decoration: none; }
   text-align: center;
 }
 
-/* Hide prev/next nav on mobile & tablet (swipe is available) */
-@media (max-width: 1024px) {
+/* Responsive nav buttons for mobile & tablet */
+@media (max-width: 600px) {
   .viewer-nav-row {
-    display: none;
+    gap: 8px;
+    margin-top: 6px;
+  }
+  .viewer-nav-row .btn-primary {
+    padding: 8px 12px;
+    font-size: 13px;
+    border-radius: 8px;
+  }
+  .nav-counter {
+    font-size: 12px;
+    min-width: 45px;
+  }
+}
+
+@media (min-width: 601px) and (max-width: 1024px) {
+  .viewer-nav-row {
+    gap: 12px;
+  }
+  .viewer-nav-row .btn-primary {
+    padding: 10px 16px;
+    font-size: 14px;
+  }
+  .nav-counter {
+    font-size: 13px;
   }
 }
 
