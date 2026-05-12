@@ -256,12 +256,23 @@ const ViewerScreen = () => {
     setPickerOpen(false);
   };
 
+  // If currentSongId is set but song not found, data is likely still loading
   if (!song) {
+    const isLoading = currentSongId !== null;
     return (
       <div className="center-screen">
-        <span className="empty-icon">🎵</span>
-        <p className="empty-text">No song selected</p>
-        <button className="btn-primary" onClick={() => navigate('/')}>Go to Songs</button>
+        {isLoading ? (
+          <>
+            <div className="spinner" />
+            <p className="empty-text">Loading song…</p>
+          </>
+        ) : (
+          <>
+            <span className="empty-icon">🎵</span>
+            <p className="empty-text">No song selected</p>
+            <button className="btn-primary" onClick={() => navigate('/')}>Go to Songs</button>
+          </>
+        )}
       </div>
     );
   }
