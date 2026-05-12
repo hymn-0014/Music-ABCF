@@ -44,6 +44,41 @@ const ViewerScreen = () => {
     }
   }, [supportsNativeFullscreen]);
 
+  // Handle back button with fullscreen awareness
+  const handleBackClick = useCallback(() => {
+    if (isFullscreen) {
+      // If in fullscreen, exit it first (user must explicitly exit fullscreen)
+      toggleFullscreen();
+    } else {
+      // Navigate only if not in fullscreen
+      navigate('/');
+    }
+  }, [isFullscreen, toggleFullscreen, navigate]);
+
+  // Handle edit button with fullscreen awareness
+  const handleEditClick = useCallback(() => {
+    if (isFullscreen) {
+      // Exit fullscreen before navigating to edit
+      toggleFullscreen();
+      // Navigate after fullscreen exits
+      setTimeout(() => navigate(`/edit-song/${song.id}`), 100);
+    } else {
+      navigate(`/edit-song/${song.id}`);
+    }
+  }, [isFullscreen, toggleFullscreen, navigate, song.id]);
+
+  // Handle setlist navigation with fullscreen awareness
+  const handleSetlistNavigation = useCallback(() => {
+    setPickerOpen(false);
+    if (isFullscreen) {
+      // Exit fullscreen before navigating
+      toggleFullscreen();
+      setTimeout(() => navigate('/setlists'), 100);
+    } else {
+      navigate('/setlists');
+    }
+  }, [isFullscreen, toggleFullscreen, navigate]);
+
   useEffect(() => {
     if (!supportsNativeFullscreen) return;
     const handler = () => setIsFullscreen(
@@ -121,6 +156,37 @@ const ViewerScreen = () => {
     };
     document.addEventListener('keydown', handler);
     return () => document.removeEventListener('keydown', handler);
+  }, [isFullscreen, supportsNativeFullscreen]);
+
+  // Safeguard: ensure fullscreen state persists during scrolling
+  // This prevents the fullscreen mode from being accidentally removed when scrolling in the lyrics container
+  useEffect(() => {
+    if (!isFullscreen) return;
+
+    const preventFullscreenExit = () => {
+      // For CSS-based fullscreen, ensure the class remains applied
+      if (!supportsNativeFullscreen && viewerRef.current) {
+        if (!viewerRef.current.classList.contains('fullscreen-active')) {
+          viewerRef.current.classList.add('fullscreen-active');
+        }
+        if (!viewerRef.current.classList.contains('fullscreen-fallback')) {
+          viewerRef.current.classList.add('fullscreen-fallback');
+        }
+      }
+    };
+
+    // Check on scroll to ensure fullscreen persists
+    const scrollListener = (e: Event) => {
+      preventFullscreenExit();
+    };
+
+    const scrollContainer = viewerRef.current?.querySelector('.lyrics-container') as HTMLElement | null;
+    if (scrollContainer) {
+      scrollContainer.addEventListener('scroll', scrollListener, { passive: true });
+      return () => {
+        scrollContainer.removeEventListener('scroll', scrollListener);
+      };
+    }
   }, [isFullscreen, supportsNativeFullscreen]);
 
   const song = songs.find((s) => s.id === currentSongId);
@@ -209,13 +275,13 @@ const ViewerScreen = () => {
     >
       <div className="viewer-header">
         <div className="viewer-header-top">
-          <button className="back-btn" onClick={() => navigate('/')}>←</button>
+          <button className="back-btn" onClick={handleBackClick}>←</button>
           <div className="viewer-header-info">
             <div className="viewer-title">{song.title}</div>
             <div className="viewer-artist">{song.artist} · Key of {song.key}</div>
           </div>
           <button className="icon-btn" title="Add to setlist" onClick={() => setPickerOpen(true)}>📋+</button>
-          <button className="icon-btn" onClick={() => navigate(`/edit-song/${song.id}`)}>✏️</button>
+          <button className="icon-btn" onClick={handleEditClick}>✏️</button>
         </div>
         {setlist && (
           <div className="viewer-setlist-info">{setlist.name} ({currentIndex + 1}/{totalInSetlist})</div>
@@ -253,7 +319,7 @@ const ViewerScreen = () => {
             {setlists.length === 0 ? (
               <div className="picker-empty">
                 <p>No setlists yet.</p>
-                <button className="btn-primary small" onClick={() => { setPickerOpen(false); navigate('/setlists'); }}>
+                <button className="btn-primary small" onClick={handleSetlistNavigation}>
                   Create Setlist
                 </button>
               </div>
