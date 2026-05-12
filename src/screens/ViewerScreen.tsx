@@ -61,11 +61,11 @@ const ViewerScreen = () => {
       // Exit fullscreen before navigating to edit
       toggleFullscreen();
       // Navigate after fullscreen exits
-      setTimeout(() => navigate(`/edit-song/${song.id}`), 100);
+      setTimeout(() => navigate(`/edit-song/${currentSongId}`), 100);
     } else {
-      navigate(`/edit-song/${song.id}`);
+      navigate(`/edit-song/${currentSongId}`);
     }
-  }, [isFullscreen, toggleFullscreen, navigate, song.id]);
+  }, [isFullscreen, toggleFullscreen, navigate, currentSongId]);
 
   // Handle setlist navigation with fullscreen awareness
   const handleSetlistNavigation = useCallback(() => {
