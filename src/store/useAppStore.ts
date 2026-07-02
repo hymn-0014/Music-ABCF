@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { Song, Setlist, ModificationEntry, NotationMode, AccidentalPreference, SyncResult, SyncConfirmFn } from '../types';
 import { songs as defaultSongs, setlists as defaultSetlists } from '../data/mockData';
+import { getSongIdentityKey } from '../utils/songRules';
 import {
   // Tier 2 — shared cloud (explicit upload/download)
   syncSongsToFirestore,
@@ -597,6 +598,7 @@ const useAppStore = create<AppState>((set, get) => ({
 
     const newSongs = [...songs];
     const idRemaps = new Map<string, string>(); // old local ID → new cloud ID
+    const cloudSongKeys = new Set(cloudSongs.map((song) => getSongIdentityKey(song)));
 
     for (const cloudSong of cloudSongs) {
       const key = `${cloudSong.title.trim().toLowerCase()}::${cloudSong.artist.trim().toLowerCase()}`;
@@ -659,6 +661,37 @@ const useAppStore = create<AppState>((set, get) => ({
           }
         }
       }
+    }
+
+    // Remove any local songs that no longer exist in cloud. This keeps libraries aligned when an admin deletes a shared song.
+    const removedSongIds = new Set(
+      songs
+        .filter((song) => !cloudSongKeys.has(getSongIdentityKey(song)))
+        .map((song) => song.id),
+    );
+
+    // Remove any local setlists that no longer exist in cloud. This keeps libraries aligned when an admin deletes a shared setlist.
+    const cloudSetlistKeys = new Set(cloudSetlists.map((sl) => sl.name.trim().toLowerCase()));
+    const removedSetlistIds = new Set(
+      setlists
+        .filter((setlist) => !cloudSetlistKeys.has(setlist.name.trim().toLowerCase()))
+        .map((setlist) => setlist.id),
+    );
+
+    if (removedSongIds.size > 0 || removedSetlistIds.size > 0) {
+      let filteredSongs = newSongs.filter((song) => !removedSongIds.has(song.id));
+      let filteredSetlists = newSetlists
+        .filter((setlist) => !removedSetlistIds.has(setlist.id))
+        .map((setlist) => ({
+          ...setlist,
+          songIds: setlist.songIds.filter((songId) => !removedSongIds.has(songId)),
+        }));
+      set({ songs: prepareSongs(filteredSongs), setlists: prepareSetlists(filteredSetlists) });
+      if (uid) {
+        savePersonalSongs(uid, prepareSongs(filteredSongs)).catch((e) => console.warn('Personal song sync failed:', e));
+        savePersonalSetlists(uid, prepareSetlists(filteredSetlists)).catch((e) => console.warn('Personal setlist sync failed:', e));
+      }
+      return result;
     }
 
     // Remap song IDs in setlists so they reference the correct (cloud) IDs

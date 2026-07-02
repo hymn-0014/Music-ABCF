@@ -4,6 +4,7 @@ import useAppStore from '../store/useAppStore';
 import { parseChordsFromText, fetchChordsFromUrl } from '../services/chordExtractor';
 import { uploadSingleSong } from '../services/firebaseService';
 import { ModificationEntry } from '../types';
+import { isDuplicateSong } from '../utils/songRules';
 
 const AddSongScreen = () => {
   const navigate = useNavigate();
@@ -37,6 +38,11 @@ const AddSongScreen = () => {
     const email = userEmail || 'unknown';
     const entry: ModificationEntry = { userEmail: email, action: 'created', timestamp: now };
     const newSong = { ...result, id: `song-${Date.now()}`, title: title || result.title, artist: artist || result.artist, tempo: parsedTempo, lastModifiedBy: email, lastModifiedAt: now, modificationHistory: [entry] };
+    const duplicate = songs.find((existingSong) => isDuplicateSong(existingSong, newSong));
+    if (duplicate) {
+      setStatus(`A song titled "${newSong.title}" by "${newSong.artist}" already exists.`);
+      return;
+    }
     setSongs([...songs, newSong]);
     window.alert(`"${newSong.title}" added locally! Use Sync to upload to cloud.`);
     navigate('/');
@@ -53,6 +59,11 @@ const AddSongScreen = () => {
     const syncEmail = userEmail || 'unknown';
     const syncEntry: ModificationEntry = { userEmail: syncEmail, action: 'created', timestamp: syncNow };
     const newSong = { ...result, id: `song-${Date.now()}`, title: title || result.title, artist: artist || result.artist, tempo: parsedTempo, lastModifiedBy: syncEmail, lastModifiedAt: syncNow, modificationHistory: [syncEntry] };
+    const duplicate = songs.find((existingSong) => isDuplicateSong(existingSong, newSong));
+    if (duplicate) {
+      setStatus(`A song titled "${newSong.title}" by "${newSong.artist}" already exists.`);
+      return;
+    }
     setSongs([...songs, newSong]);
     setCloudSyncing(true);
     try {
