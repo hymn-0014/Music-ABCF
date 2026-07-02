@@ -242,8 +242,8 @@ const SettingsScreen = () => {
           <button className="settings-sync-row" onClick={() => handleSync('pull')} disabled={syncing !== null}>
             <span className="settings-icon">📥</span>
             <div className="settings-sync-info">
-              <span>Download from Cloud</span>
-              <span className="settings-hint">Downloads cloud songs & setlists not on device</span>
+              <span>Sync from Cloud</span>
+              <span className="settings-hint">Syncs cloud songs & setlists with this device</span>
             </div>
             {syncing === 'pull' ? <span className="spinner-small" /> : <span className="arrow">→</span>}
           </button>
