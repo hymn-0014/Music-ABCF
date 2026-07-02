@@ -819,6 +819,41 @@ const useAppStore = create<AppState>((set, get) => ({
       }
     }
 
+    // Remove any local songs that no longer exist in cloud (deleted by admin).
+    // This ensures deletion rules are enforced even during per-setlist downloads.
+    const allCloudSongs = await fetchSongsFromFirestore(uid);
+    const cloudSongKeys = new Set(allCloudSongs.map((song) => getSongIdentityKey(song)));
+    const removedSongIds = new Set(
+      songs
+        .filter((song) => !cloudSongKeys.has(getSongIdentityKey(song)))
+        .map((song) => song.id),
+    );
+
+    // Remove any local setlists that no longer exist in cloud (deleted by admin).
+    const allCloudSetlists = await fetchSetlistsFromFirestore(uid);
+    const cloudSetlistKeys = new Set(allCloudSetlists.map((sl) => sl.name.trim().toLowerCase()));
+    const removedSetlistIds = new Set(
+      setlists
+        .filter((setlist) => !cloudSetlistKeys.has(setlist.name.trim().toLowerCase()))
+        .map((setlist) => setlist.id),
+    );
+
+    if (removedSongIds.size > 0 || removedSetlistIds.size > 0) {
+      const filteredSongs = newSongs.filter((song) => !removedSongIds.has(song.id));
+      const filteredSetlists = newSetlists
+        .filter((setlist) => !removedSetlistIds.has(setlist.id))
+        .map((setlist) => ({
+          ...setlist,
+          songIds: setlist.songIds.filter((songId) => !removedSongIds.has(songId)),
+        }));
+      set({ songs: prepareSongs(filteredSongs), setlists: prepareSetlists(filteredSetlists) });
+      if (uid) {
+        savePersonalSongs(uid, prepareSongs(filteredSongs)).catch((e) => console.warn('Personal song sync failed:', e));
+        savePersonalSetlists(uid, prepareSetlists(filteredSetlists)).catch((e) => console.warn('Personal setlist sync failed:', e));
+      }
+      return { songsDownloaded, warnings };
+    }
+
     set({ songs: prepareSongs(newSongs), setlists: prepareSetlists(newSetlists) });
     // Persist downloaded data to personal cloud
     if (uid) {
